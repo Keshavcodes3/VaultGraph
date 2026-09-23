@@ -1,159 +1,524 @@
-# Turborepo starter
+<h1><b>VaultGraph</b></h1>
 
-This Turborepo starter is maintained by the Turborepo core team.
+<b>Your knowledge, connected.</b>
 
-## Using this example
+VaultGraph is a personal knowledge workspace that combines the structured workspace of Notion with the connected knowledge model of Obsidian.
 
-Run the following command:
+Write pages. Build databases. Link ideas. Explore your knowledge as a graph.
 
-```sh
-npx create-turbo@latest
+The goal isn't to build another notes app.
+
+The goal is to build a system where your knowledge has structure, relationships, and context.
+
+What is VaultGraph?
+
+VaultGraph explores what happens when those ideas exist together.
+
+```
+                    VAULTGRAPH
+
+              ┌─────────────────────┐
+              │      Workspace      │
+              └──────────┬──────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+        Pages         Databases       Graph
+          │              │              │
+       Markdown       Properties      Links
+       Blocks         Views           Backlinks
+       Folders        Filters         Tags
+          │              │              │
+          └──────────────┼──────────────┘
+                         │
+                         ▼
+                   AI Intelligence
+
 ```
 
-## What's inside?
+⚡ Core idea
 
-This Turborepo includes the following packages/apps:
+A page isn't just a document.
 
-### Apps and Packages
+A database isn't just a table.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+A link isn't just text.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+Everything can become part of your knowledge graph.
 
-### Utilities
+For example:
 
-This Turborepo has some additional tools already setup for you:
+# Go Concurrency
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+Goroutines communicate through [[Channels]].
 
-### Build
+They are one of the foundations of
+concurrent programming in [[Go]].
 
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+VaultGraph can understand:
 ```
 
-Without global `turbo`, use your package manager:
+                 Go
+                  │
+                  │
+          Go Concurrency
+             │         │
+             │         │
+             ▼         ▼
+        Goroutines   Channels
+```
+And those relationships become navigable.
+```
+🚀 Features
+📝 Knowledge workspace
+Pages
+Nested pages
+Folders
+Markdown
+Block-based editing
+Slash commands
+Code blocks
+Templates
+🗄️ Databases
+```
+Create structured collections inside your workspace.
 
-```sh
-cd my-turborepo
-npx turbo build
-bun exec turbo build
-bun exec turbo build
+Projects
+```
+┌────────────┬──────────┬──────────┐
+│ Project    │ Status   │ Priority │
+├────────────┼──────────┼──────────┤
+│ VaultGraph │ Building │ High     │
+│ Compiler   │ Learning │ Medium   │
+└────────────┴──────────┴──────────┘
+```
+Eventually:
+```
+Table views
+Board views
+Filters
+Sorting
+Properties
+Relations
+Multiple views
+🔗 Knowledge graph
+```
+Every relationship matters.
+
+VaultGraph understands:
+```
+[[Wikilinks]]
+Backlinks
+Tags
+Frontmatter
+Page relationships
+Block references
+Connected concepts
+```
+Explore:
+```
+Neighbors
+Shortest paths
+Orphan pages
+Most connected concepts
+Related knowledge
+🕸️ Graph exploration
+```
+Instead of searching for information, navigate through it.
+
+Select a page:
+
+```
+              Databases
+                  │
+                  │
+          ┌───────┴───────┐
+          │               │
+       Postgres         Redis
+          │               │
+          └───────┬───────┘
+                  │
+             VaultGraph
+
+```
+The graph becomes another way of exploring your workspace.
+
+🤖 Graph-aware AI
+
+VaultGraph isn't designed around:
+
+"Chat with your notes."
+
+Instead, AI can reason over:
+```
+Your question
+     ↓
+Semantic search
+     ↓
+Relevant pages
+     ↓
+Graph expansion
+     ↓
+Related concepts
+     ↓
+Relationships + context
+     ↓
+LLM
+```
+So instead of retrieving isolated chunks, the system can understand how the information is connected.
+
+Potential capabilities:
+```
+Graph-aware Q&A
+Explain relationships
+Summarize connected concepts
+Remix pages
+Generate documentation
+Generate interview answers
+Explore unfamiliar knowledge
+```
+🧠 Architecture
+VaultGraph is being built as an event-driven knowledge system.
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+                     ┌──────────────┐
+                     │   Next.js    │
+                     │  Web Client  │
+                     └──────┬───────┘
+                            │
+                         HTTP/WS
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │   API Server  │
+                    └───────┬───────┘
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+              ▼             ▼             ▼
+          PostgreSQL      Redis        AI Layer
+              │             │
+              │             ▼
+              │          Workers
+              │             │
+              └─────────────┘
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+```
+A page update can become an event:
+```
+PageUpdated
+     │
+     ├───────────────┐
+     │               │
+     ▼               ▼
+Graph Worker      Search Worker
+     │               │
+     ▼               ▼
+Update edges      Update index
 
-```sh
-turbo build --filter=docs
 ```
 
-Without global `turbo`:
+This allows expensive work to happen asynchronously without blocking the user.
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+🛠️ Tech Stack
+
+The stack is intentionally chosen around learning real engineering concepts.
+```
+Frontend
+Next.js
+React
+TypeScript
+Tailwind CSS
+Backend
+Node.js / Go
+REST APIs
+WebSockets
+Event-driven workers
+Data
+PostgreSQL
+Redis
+Knowledge
+Markdown
+Graph relationships
+Full-text / semantic search
+AI
+Embeddings
+RAG
+Graph-aware retrieval
+LangGraph or a lightweight agent architecture
+```
+🗺️ Roadmap
+
+VaultGraph is being built incrementally.
+```
+Phase 01 — Workspace
+
+Create workspace
+
+Create vault
+
+Folder hierarchy
+
+Create pages
+
+Edit pages
+
+Delete pages
+
+Markdown persistence
+
+Phase 02 — Knowledge Engine
+
+Markdown parser
+
+Wikilinks
+
+Backlinks
+
+Tags
+
+Frontmatter
+
+Unlinked mentions
+
+Phase 03 — Graph
+
+Graph nodes
+
+Graph edges
+
+Local graph
+
+Global graph
+
+Neighbor queries
+
+Orphan detection
+
+Shortest-path queries
+
+Connected-concept analysis
+
+Phase 04 — Databases
+
+Database creation
+
+Properties
+
+Rows
+
+Table view
+
+Filters
+
+Sorting
+
+Board view
+
+Relations
+
+Phase 05 — Search
+
+Workspace search
+
+Fuzzy search
+
+Full-text search
+
+Search indexing
+
+Command palette
+
+Phase 06 — Realtime
+
+WebSocket layer
+
+Presence
+
+Multi-tab synchronization
+
+Event system
+
+Background workers
+
+Phase 07 — AI
+
+Embeddings
+
+Chunking
+
+Vector retrieval
+
+Graph expansion
+
+Graph-aware RAG
+
+AI page remixing
+
+Knowledge exploration
+
+Phase 08 — Collaboration
+```
+Sharing
+
+Permissions
+
+Collaborative editing
+
+Comments
+
+Version history
+
+🧪 The first milestone
+
+The first version doesn't need to be impressive.
+
+It needs to work.
+```
+Create Vault
+     ↓
+Create Page A
+     ↓
+Create Page B
+     ↓
+Write [[Page B]] inside Page A
+     ↓
+Save
+     ↓
+Parser detects relationship
+     ↓
+Graph updates
+     ↓
+Backlink appears
+     ↓
+Graph displays connection
+```
+If this works:
+
+VaultGraph has a heartbeat.
+
+Everything else is built on top of it.
+```
+🎯 Design principles
+1. Knowledge first
+
+VaultGraph should help users understand their information, not just store it.
+
+2. Relationships are first-class
+
+Links shouldn't be an afterthought.
+
+3. Structure without rigidity
+
+Folders and databases provide structure.
+
+Links and graphs provide freedom.
+
+4. AI should understand context
+
+AI shouldn't simply retrieve text.
+
+It should understand the relationships surrounding that text.
+
+5. Complexity belongs behind the interface
+```
+The system can be sophisticated.
+
+The experience shouldn't be.
+
+🧱 Project philosophy
+
+VaultGraph is also an engineering project.
+
+The goal is to explore:
+
+```
+Domain-driven backend design
+Event-driven architecture
+PostgreSQL data modeling
+Graph algorithms
+Search systems
+Background processing
+Realtime systems
+Distributed state
+AI retrieval systems
+Collaborative editing
+```
+Every feature should teach something.
+
+📸 Screenshots
+
+Coming soon.
+
+The interface is being designed around a calm, minimal workspace rather than a traditional admin dashboard.
+
+🏗️ Development
+
+Clone the repository:
+
+git clone <repository-url>
+cd vaultgraph
+
+Install dependencies and configure the environment according to the project setup.
+
+Create your environment:
+
+DATABASE_URL=
+REDIS_URL=
+
+Run the development environment:
+
+# development commands coming soon
+🌌 Long-term vision
+
+VaultGraph starts as a personal knowledge workspace.
+
+Eventually, it should become something closer to a knowledge operating system.
+
+```
+                    
+                    VAULTGRAPH
+                         │
+       ┌─────────────────┼─────────────────┐
+       │                 │                 │
+   Documents          Databases         Knowledge
+       │                 │                 │
+       └─────────────────┼─────────────────┘
+                         │
+                       Graph
+                         │
+                         ▼
+                   AI reasoning
+                         │
+                         ▼
+                  Your knowledge
+
 ```
 
-### Develop
+The interesting question isn't:
 
-To develop all apps and packages, run the following command:
+"Where did I save this?"
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+It's:
 ```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+"How is this connected to everything else I know?"
 ```
+Status
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+🚧 Early development
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+VaultGraph is actively being built.
 
-```sh
-turbo dev --filter=web
-```
+The architecture, APIs, and features will evolve as the system grows.
 
-Without global `turbo`:
+Author
 
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
-```
+Built by Keshav while learning how real knowledge systems are designed, built, and scaled.
 
-### Remote Caching
+License
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+License TBD.
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+Write. Connect. Explore. Understand.
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+VaultGraph.
