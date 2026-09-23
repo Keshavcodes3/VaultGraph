@@ -3,6 +3,7 @@ import type {
   UpdateWorkspaceInput,
 } from "@repo/shared/workspace-types";
 
+import { HttpError } from "../../../Shared/httpError";
 import { workspaceRepoClass } from "../Repostiary/workspace.repositary";
 
 import {
@@ -27,11 +28,24 @@ export class workspaceServiceClass {
     data: CreateWorkspaceInput,
     ownerId: string
   ) => {
+    // Defensive: routes validate the body, but a missing/unparsed JSON body
+    // (e.g. no Content-Type: application/json) would otherwise crash with a
+    // TypeError on `data.name`. Fail with a clear 400 instead.
+    if (!data || typeof data.name !== "string") {
+      throw new HttpError("Workspace name is required", 400);
+    }
     const name = normalizeWorkspaceName(data.name);
 
     const slug = normalizeWorkspaceSlug(
       data.slug || generateWorkspaceSlug(name)
     );
+
+    if (!slug) {
+      throw new HttpError(
+        "Could not generate a valid slug from the workspace name",
+        400
+      );
+    }
 
     const existingWorkspace =
       await this.workspaceRepo.getWorkspaceBySlug(slug);
@@ -97,6 +111,10 @@ export class workspaceServiceClass {
     ownerId: string,
     data: UpdateWorkspaceInput
   ) => {
+    if (!data || (data.name === undefined && data.slug === undefined)) {
+      throw new HttpError("Nothing to update", 400);
+    }
+
     const workspace =
       await this.workspaceRepo.getWorkspaceByIdAndOwner(
         workspaceId,

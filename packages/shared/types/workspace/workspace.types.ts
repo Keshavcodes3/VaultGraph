@@ -17,7 +17,9 @@ export const createWorkspaceSchema = z.object({
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Slug can only contain lowercase letters, numbers and hyphens"
-    ),
+    )
+    // Optional: the server generates one from `name` when omitted.
+    .optional(),
 });
 
 export const updateWorkspaceSchema = z.object({

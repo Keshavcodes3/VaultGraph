@@ -1,6 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { apiError } from "./apiResponse";
 import { HttpError } from "./httpError";
+import {
+  WorkspaceAccessDeniedError,
+  WorkspaceNotFoundError,
+  WorkspaceSlugAlreadyExistsError,
+} from "../Modules/Workspace/utils/workspace.errors";
 
 const isUniqueViolation = (err: unknown) => {
   const e = err as { code?: string; sqlState?: string; constraint?: string };
@@ -17,6 +22,18 @@ export const errorHandler = (
 ) => {
   if (err instanceof HttpError) {
     return apiError(res, err.message, err.statusCode);
+  }
+
+  if (err instanceof WorkspaceNotFoundError) {
+    return apiError(res, err.message, 404);
+  }
+
+  if (err instanceof WorkspaceAccessDeniedError) {
+    return apiError(res, err.message, 403);
+  }
+
+  if (err instanceof WorkspaceSlugAlreadyExistsError) {
+    return apiError(res, err.message, 409);
   }
 
   if (isUniqueViolation(err)) {

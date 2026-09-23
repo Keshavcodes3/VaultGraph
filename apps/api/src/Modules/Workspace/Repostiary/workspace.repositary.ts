@@ -1,6 +1,5 @@
 import { db } from "../../../prisma/db";
-
-import type { CreateWorkspaceInput } from "@repo/shared/workspace-types";
+import { nowInstant } from "../../../prisma/timestamps";
 
 export class workspaceRepoClass {
   constructor(
@@ -8,15 +7,18 @@ export class workspaceRepoClass {
   ) {}
 
   // CREATE
+  // Takes the normalized { name, slug } — the service generates the slug
+  // when the client omits it, so the repo always receives both.
   create = async (
-    data: CreateWorkspaceInput,
+    data: { name: string; slug: string },
     ownerId: string
   ) => {
     const workspace = await this.workspaceRepo.create({
       name: data.name,
       slug: data.slug,
       ownerId,
-      updatedAt: new Date(),
+      // Prisma 8's timestamptz codec expects a Temporal.Instant, not a Date.
+      updatedAt: nowInstant(),
     });
 
     return workspace;
@@ -105,7 +107,8 @@ export class workspaceRepoClass {
       })
       .update({
         ...data,
-        updatedAt: new Date(),
+        // Prisma 8's timestamptz codec expects a Temporal.Instant, not a Date.
+        updatedAt: nowInstant(),
       })
 
     return workspace;

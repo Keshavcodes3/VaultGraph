@@ -1,5 +1,10 @@
 import { Router } from "express";
 
+import {
+  createWorkspaceSchema,
+  updateWorkspaceSchema,
+} from "@repo/shared/workspace-types";
+import { validateBody } from "../../../Shared/validate";
 import { authenticate } from "../../../Middleware/auth.middleware";
 
 import { workspaceRepoClass } from "../Repostiary/workspace.repositary";
@@ -28,6 +33,7 @@ router.use(authenticate);
 // Create workspace
 router.post(
   "/",
+  validateBody(createWorkspaceSchema),
   workspaceController.create
 );
 
@@ -52,6 +58,7 @@ router.get(
 // Update workspace
 router.patch(
   "/:workspaceId",
+  validateBody(updateWorkspaceSchema),
   workspaceController.update
 );
 
