@@ -1,7 +1,7 @@
 import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
-} from "@vaultgraph/workspace/workspace-types";
+} from "@repo/shared/workspace-types";
 
 import { workspaceRepoClass } from "../Repostiary/workspace.repositary";
 
