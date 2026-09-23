@@ -33,9 +33,13 @@
     "paths": {
       "@repo/shared": ["../../packages/shared/src/index.ts"],
       "@repo/shared/auth-types": ["../../packages/shared/types/Auth/auth.types.ts"],
+      "@repo/workspace": ["../../packages/shared/types/workspace/workspace.types.ts"],
+      "@repo/workspace/workspace-types": ["../../packages/shared/types/workspace/workspace.types.ts"],
       "@repo/ui": ["../../packages/ui/src/index.ts"],
       "@vaultgraph/shared": ["../../packages/shared/src/index.ts"],
       "@vaultgraph/shared/auth-types": ["../../packages/shared/types/Auth/auth.types.ts"],
+      "@vaultgraph/workspace": ["../../packages/shared/types/workspace/src/index.ts"],
+      "@vaultgraph/workspace/workspace-types": ["../../packages/shared/types/workspace/workspace.types.ts"],
       "@vaultgraph/ui": ["../../packages/ui/src/index.ts"],
       "@vaultgraph/ui/button": ["../../packages/ui/src/button.tsx"],
       "@vaultgraph/ui/card": ["../../packages/ui/src/card.tsx"],

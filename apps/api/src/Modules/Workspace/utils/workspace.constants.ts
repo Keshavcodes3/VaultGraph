@@ -1,0 +1,6 @@
+export const WORKSPACE_LIMITS = {
+  NAME_MIN_LENGTH: 1,
+  NAME_MAX_LENGTH: 100,
+  SLUG_MIN_LENGTH: 1,
+  SLUG_MAX_LENGTH: 100,
+} as const;
