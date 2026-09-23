@@ -1,35 +1,32 @@
 {
   "name": "vaultgraph",
-  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.3.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "prettier": "3.9.6",
+    "turbo": "^2.11.3",
+    "typescript": "7.0.2"
   },
-  "packageManager": "bun@1.4.2",
-  "ignoreScripts": [
-    "sharp",
-    "unrs-resolver"
+  "engines": {
+    "node": ">=24"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "1.4.2"
+    }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
   ],
-  "trustedDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
 }

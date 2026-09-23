@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "incremental": false,
+    "isolatedModules": true,
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "paths": {
+      "@vaultgraph/shared": ["../shared/src/index.ts"],
+      "@vaultgraph/shared/auth-types": ["../shared/types/Auth/auth.types.ts"],
+      "@vaultgraph/ui": ["../ui/src/index.ts"],
+      "@vaultgraph/ui/button": ["../ui/src/button.tsx"],
+      "@vaultgraph/ui/card": ["../ui/src/card.tsx"],
+      "@vaultgraph/ui/code": ["../ui/src/code.tsx"]
+    }
+  }
+}

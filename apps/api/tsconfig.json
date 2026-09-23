@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    // Environment setup & latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "types": [
+      "bun",
+      "node"
+    ],
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "resolveJsonModule": true,
+    "paths": {
+      "@vaultgraph/shared": ["../../packages/shared/src/index.ts"],
+      "@vaultgraph/shared/auth-types": ["../../packages/shared/types/Auth/auth.types.ts"],
+      "@vaultgraph/ui": ["../../packages/ui/src/index.ts"],
+      "@vaultgraph/ui/button": ["../../packages/ui/src/button.tsx"],
+      "@vaultgraph/ui/card": ["../../packages/ui/src/card.tsx"],
+      "@vaultgraph/ui/code": ["../../packages/ui/src/code.tsx"]
+    }
+  }
+}
