@@ -1,11 +1,18 @@
 import type { NextFunction, Request, Response } from "express";
 import { HttpError } from "../../../Shared/httpError";
 import { authRepository } from "../repositary/auth.repo";
-import { verifyAuthToken, type AuthTokenPayload } from "../utils/jwt";
+import {
+  extractAuthToken,
+  verifyAuthToken,
+  type AuthTokenPayload,
+} from "../utils/jwt";
 
 export type AuthRequest = Request & {
   auth?: AuthTokenPayload;
 };
+
+// Re-exported for backwards compatibility (e.g. workspace middleware).
+export { extractAuthToken };
 
 export const requireAuth = async (
   req: AuthRequest,
@@ -13,12 +20,8 @@ export const requireAuth = async (
   next: NextFunction
 ) => {
   try {
-    const header = req.headers.authorization;
-    if (!header?.startsWith("Bearer ")) {
-      throw new HttpError("Missing or invalid authorization header", 401);
-    }
+    const token = extractAuthToken(req);
 
-    const token = header.slice("Bearer ".length).trim();
     if (!token) {
       throw new HttpError("Missing auth token", 401);
     }
@@ -38,6 +41,11 @@ export const requireAuth = async (
       next(err);
       return;
     }
+    // Log a concise message instead of the full JsonWebTokenError dump.
+    console.error(
+      "Authentication failed:",
+      err instanceof Error ? err.message : err
+    );
     next(new HttpError("Invalid or expired token", 401));
   }
 };

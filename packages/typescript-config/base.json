@@ -18,6 +18,8 @@
     "paths": {
       "@vaultgraph/shared": ["../shared/src/index.ts"],
       "@vaultgraph/shared/auth-types": ["../shared/types/Auth/auth.types.ts"],
+      "@vaultgraph/workspace": ["../shared/types/workspace/workspace.types.ts"],
+      "@vaultgraph/workspace/workspace-types": ["../shared/types/workspace/workspace.types.ts"],
       "@vaultgraph/ui": ["../ui/src/index.ts"],
       "@vaultgraph/ui/button": ["../ui/src/button.tsx"],
       "@vaultgraph/ui/card": ["../ui/src/card.tsx"],
