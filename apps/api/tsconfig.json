@@ -31,6 +31,9 @@
     "noPropertyAccessFromIndexSignature": false,
     "resolveJsonModule": true,
     "paths": {
+      "@repo/shared": ["../../packages/shared/src/index.ts"],
+      "@repo/shared/auth-types": ["../../packages/shared/types/Auth/auth.types.ts"],
+      "@repo/ui": ["../../packages/ui/src/index.ts"],
       "@vaultgraph/shared": ["../../packages/shared/src/index.ts"],
       "@vaultgraph/shared/auth-types": ["../../packages/shared/types/Auth/auth.types.ts"],
       "@vaultgraph/ui": ["../../packages/ui/src/index.ts"],
