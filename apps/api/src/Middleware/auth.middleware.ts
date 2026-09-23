@@ -1,5 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import {
+  extractAuthToken,
+  verifyAuthToken,
+} from "../Modules/auth/utils/jwt";
 
 interface AuthPayload {
   id: string;
@@ -19,7 +22,7 @@ export const authenticate = (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies?.accessToken;
+    const token = extractAuthToken(req);
 
     if (!token) {
       return res.status(401).json({
@@ -28,12 +31,15 @@ export const authenticate = (
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as AuthPayload;
+    // Tokens are signed as { sub, email } (see signAuthToken). Accept the
+    // legacy { id } shape too so old tokens/clients keep working.
+    const decoded = verifyAuthToken(token) as unknown as {
+      sub?: string;
+      id?: string;
+    };
+    const userId = decoded.sub ?? decoded.id;
 
-    if (!decoded.id) {
+    if (!userId) {
       return res.status(401).json({
         success: false,
         message: "Invalid authentication token",
@@ -41,11 +47,15 @@ export const authenticate = (
     }
 
     req.user = {
-      id: decoded.id,
+      id: userId,
     };
 
     next();
-  } catch {
+  } catch (err) {
+    console.error(
+      "Authentication failed:",
+      err instanceof Error ? err.message : err
+    );
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",

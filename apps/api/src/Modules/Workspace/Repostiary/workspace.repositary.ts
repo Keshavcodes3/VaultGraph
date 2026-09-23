@@ -1,6 +1,6 @@
 import { db } from "../../../prisma/db";
 
-import type { CreateWorkspaceInput } from "@vaultgraph/workspace/workspace-types";
+import type { CreateWorkspaceInput } from "@repo/shared/workspace-types";
 
 export class workspaceRepoClass {
   constructor(
