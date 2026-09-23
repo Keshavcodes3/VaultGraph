@@ -19,9 +19,6 @@ export default function Home() {
         <Hero />
         <InteractiveEditor />
         <ScrollStory />
-        <FloatingKnowledge />
-        <CommandPalette />
-        <GraphShowcase />
         <Capabilities />
         <Shortcuts />
         <KnowledgeCounter />

@@ -1,315 +1,397 @@
 "use client";
 
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  neighborhood,
-  nodeById,
-  type GraphEdge,
-  type GraphNode,
-} from "./graph-utils";
+import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import { useCalm } from "./Reveal";
 
-const NODES: GraphNode[] = [
-  { id: "vault", label: "VaultGraph", x: 400, y: 280, radius: 46 },
-  { id: "documents", label: "Documents", x: 400, y: 78, radius: 30, accent: "#0284c7" },
-  { id: "notes", label: "Notes", x: 156, y: 166, radius: 30, accent: "#4f46e5" },
-  { id: "projects", label: "Projects", x: 644, y: 166, radius: 30, accent: "#16a34a" },
-  { id: "people", label: "People", x: 146, y: 394, radius: 30, accent: "#0d9488" },
-  { id: "research", label: "Research", x: 654, y: 394, radius: 30, accent: "#d97706" },
-  { id: "ideas", label: "Ideas", x: 252, y: 488, radius: 30, accent: "#e11d48" },
-  { id: "databases", label: "Databases", x: 548, y: 488, radius: 30, accent: "#7c3aed" },
+const FILES = [
+  {
+    id: "notes",
+    label: "Notes",
+    x: 180,
+    y: 145,
+    rotate: -5,
+  },
+  {
+    id: "research",
+    label: "Research",
+    x: 620,
+    y: 155,
+    rotate: 4,
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    x: 150,
+    y: 380,
+    rotate: 3,
+  },
+  {
+    id: "docs",
+    label: "Documents",
+    x: 650,
+    y: 375,
+    rotate: -4,
+  },
 ];
 
-const EDGES: GraphEdge[] = [
-  { from: "vault", to: "documents" },
-  { from: "vault", to: "notes" },
-  { from: "vault", to: "projects" },
-  { from: "vault", to: "people" },
-  { from: "vault", to: "research" },
-  { from: "vault", to: "ideas" },
-  { from: "vault", to: "databases" },
-  { from: "notes", to: "documents" },
-  { from: "projects", to: "documents" },
-  { from: "ideas", to: "databases" },
-  { from: "research", to: "databases" },
-  { from: "people", to: "notes" },
-  { from: "people", to: "ideas" },
-];
+function Document({
+  label,
+  rotate,
+}: {
+  label: string;
+  rotate: number;
+}) {
+  return (
+    <motion.div
+      animate={{
+        y: [0, -3, 0],
+        rotate: [rotate, rotate + 1, rotate],
+      }}
+      transition={{
+        duration: 4,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+      className="absolute w-[105px] rounded-xl border border-[#e7e7ea] bg-white p-3 shadow-[0_8px_30px_rgba(0,0,0,0.035)]"
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <div className="h-2 w-2 rounded-full bg-[#111116]" />
+        <div className="h-1 w-8 rounded-full bg-[#eeeeef]" />
+      </div>
 
-const DESKTOP_VB = { x: 0, y: 0, w: 800, h: 560 };
-const MOBILE_VB = { x: 70, y: 30, w: 660, h: 500 };
+      <div className="space-y-1.5">
+        <div className="h-1.5 w-[72%] rounded-full bg-[#e8e8eb]" />
+        <div className="h-1.5 w-full rounded-full bg-[#f0f0f2]" />
+        <div className="h-1.5 w-[58%] rounded-full bg-[#f0f0f2]" />
+      </div>
 
-const line = (a: GraphNode, b: GraphNode) =>
-  `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+      <div className="mt-3 text-[8px] font-medium text-[#a1a1aa]">
+        {label}
+      </div>
+    </motion.div>
+  );
+}
 
-const NODE_BASE =
-  "cursor-pointer fill-white stroke-line outline-none transition-[opacity,stroke] duration-300 data-[center=true]:fill-ink data-[center=true]:stroke-ink data-[hot=true]:stroke-accent data-[hot=true]:stroke-[2.4px] data-[dim=true]:opacity-30";
-const LABEL_BASE =
-  "font-sans text-[15px] font-medium tracking-[-0.01em] fill-muted transition-[opacity,fill] duration-300 data-[center=true]:fill-ink data-[center=true]:text-[17px] data-[center=true]:font-bold data-[hot=true]:fill-ink data-[dim=true]:opacity-30";
+function Bot({ calm }: { calm: boolean }) {
+  const [looking, setLooking] = useState<"left" | "right">("left");
+
+  return (
+    <motion.div
+      className="absolute left-1/2 top-1/2 z-20"
+      style={{ x: "-50%", y: "-50%" }}
+      animate={
+        calm
+          ? undefined
+          : {
+              y: ["-50%", "calc(-50% - 5px)", "-50%"],
+            }
+      }
+      transition={{
+        duration: 3.2,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+      onAnimationComplete={() =>
+        setLooking((value) => (value === "left" ? "right" : "left"))
+      }
+    >
+      {/* shadow */}
+      <motion.div
+        className="absolute -bottom-3 left-1/2 h-3 w-20 -translate-x-1/2 rounded-full bg-black/[0.06] blur-md"
+        animate={
+          calm
+            ? undefined
+            : {
+                scaleX: [1, 0.88, 1],
+                opacity: [0.5, 0.3, 0.5],
+              }
+        }
+        transition={{
+          duration: 3.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* antenna */}
+      <div className="absolute -top-7 left-1/2 -translate-x-1/2">
+        <div className="mx-auto h-5 w-px bg-[#cfcfd4]" />
+
+        <motion.div
+          className="h-2.5 w-2.5 rounded-full bg-[#111116]"
+          animate={
+            calm
+              ? undefined
+              : {
+                  scale: [1, 1.2, 1],
+                  opacity: [0.7, 1, 0.7],
+                }
+          }
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+          }}
+        />
+      </div>
+
+      {/* body */}
+      <motion.div
+        className="relative h-[92px] w-[112px] rounded-[30px] border border-[#dcdce1] bg-white shadow-[0_18px_45px_rgba(0,0,0,0.08)]"
+        animate={
+          calm
+            ? undefined
+            : {
+                rotate: [0, -1, 1, 0],
+              }
+        }
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+        {/* face */}
+        <div className="absolute left-1/2 top-[27px] flex -translate-x-1/2 gap-5">
+          <motion.span
+            className="h-3.5 w-5 rounded-full bg-[#111116]"
+            animate={
+              calm
+                ? undefined
+                : {
+                    scaleY: [1, 1, 1, 0.15, 1],
+                  }
+            }
+            transition={{
+              duration: 4.5,
+              repeat: Infinity,
+              times: [0, 0.45, 0.88, 0.91, 1],
+            }}
+          />
+
+          <motion.span
+            className="h-3.5 w-5 rounded-full bg-[#111116]"
+            animate={
+              calm
+                ? undefined
+                : {
+                    scaleY: [1, 1, 1, 0.15, 1],
+                  }
+            }
+            transition={{
+              duration: 4.5,
+              repeat: Infinity,
+              times: [0, 0.45, 0.88, 0.91, 1],
+            }}
+          />
+        </div>
+
+        {/* mouth */}
+        <motion.div
+          className="absolute bottom-[22px] left-1/2 h-1.5 w-7 -translate-x-1/2 rounded-full bg-[#111116]"
+          animate={
+            calm
+              ? undefined
+              : {
+                  width: [28, 18, 28],
+                }
+          }
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* side arms */}
+        <motion.div
+          className="absolute -left-4 top-9 h-5 w-4 rounded-l-full border border-[#dcdce1] bg-white"
+          animate={
+            calm
+              ? undefined
+              : {
+                  rotate: [0, -8, 0],
+                }
+          }
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+          }}
+        />
+
+        <motion.div
+          className="absolute -right-4 top-9 h-5 w-4 rounded-r-full border border-[#dcdce1] bg-white"
+          animate={
+            calm
+              ? undefined
+              : {
+                  rotate: [0, 8, 0],
+                }
+          }
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+          }}
+        />
+      </motion.div>
+
+      {/* tiny status */}
+      <motion.div
+        className="absolute -right-9 -top-8 rounded-lg border border-[#e8e8eb] bg-white px-2 py-1 text-[8px] font-medium text-[#777780] shadow-sm"
+        animate={
+          calm
+            ? undefined
+            : {
+                opacity: [0, 1, 1, 0],
+                y: [4, 0, 0, -3],
+              }
+        }
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          times: [0, 0.12, 0.75, 1],
+        }}
+      >
+        thinking…
+      </motion.div>
+    </motion.div>
+  );
+}
 
 export default function KnowledgeGraph() {
   const calm = useCalm();
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [mobile, setMobile] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<string | null>(null);
 
-  // Parallax + cursor glow (motion values: zero React re-renders)
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const smx = useSpring(mx, { stiffness: 60, damping: 18 });
-  const smy = useSpring(my, { stiffness: 60, damping: 18 });
-  const edgeX = useTransform(smx, (v) => v * 7);
-  const edgeY = useTransform(smy, (v) => v * 7);
-  const nodeX = useTransform(smx, (v) => v * 14);
-  const nodeY = useTransform(smy, (v) => v * 14);
-  const gx = useMotionValue(0);
-  const gy = useMotionValue(0);
-  const glowX = useSpring(gx, { stiffness: 120, damping: 20 });
-  const glowY = useSpring(gy, { stiffness: 120, damping: 20 });
-
-  // Proximity scaling targets (rAF, direct DOM writes)
-  const mouse = useRef<{ x: number; y: number; inside: boolean }>({
-    x: 0,
-    y: 0,
-    inside: false,
-  });
-  const vbRef = useRef(DESKTOP_VB);
-  const nodeEls = useRef(new Map<string, SVGGElement>());
-  const scales = useRef(new Map<string, number>());
-  const raf = useRef(0);
-
-  useEffect(() => {
-    vbRef.current = mobile ? MOBILE_VB : DESKTOP_VB;
-  }, [mobile]);
-
-  useEffect(() => {
-    const q = window.matchMedia("(max-width: 640px)");
-    const apply = () => setMobile(q.matches);
-    apply();
-    q.addEventListener("change", apply);
-    return () => q.removeEventListener("change", apply);
-  }, []);
-
-  useEffect(() => {
-    if (calm) return;
-    const tick = () => {
-      const m = mouse.current;
-      for (const n of NODES) {
-        const el = nodeEls.current.get(n.id);
-        if (!el) continue;
-        const target = m.inside
-          ? 1 + 0.24 * Math.max(0, 1 - Math.hypot(m.x - n.x, m.y - n.y) / 175)
-          : 1;
-        const prev = scales.current.get(n.id) ?? 1;
-        const next = prev + (target - prev) * 0.16;
-        scales.current.set(n.id, next);
-        el.style.transform = `scale(${next.toFixed(3)})`;
-      }
-      raf.current = requestAnimationFrame(tick);
-    };
-    raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
-  }, [calm ]);
-
-  const vb = mobile ? MOBILE_VB : DESKTOP_VB;
-
-  const onMove = (e: React.MouseEvent) => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const nx = (e.clientX - r.left) / r.width - 0.5; // -0.5..0.5
-    const ny = (e.clientY - r.top) / r.height - 0.5;
-    mx.set(nx);
-    my.set(ny);
-    gx.set(nx * r.width * 0.42);
-    gy.set(ny * r.height * 0.42);
-    const v = vbRef.current;
-    mouse.current = {
-      x: v.x + ((e.clientX - r.left) / r.width) * v.w,
-      y: v.y + ((e.clientY - r.top) / r.height) * v.h,
-      inside: true,
-    };
-  };
-
-  const onLeave = () => {
-    mx.set(0);
-    my.set(0);
-    gx.set(0);
-    gy.set(0);
-    mouse.current.inside = false;
-    setHovered(null);
-  };
-
-  const near = useMemo(
-    () => (hovered ? neighborhood(EDGES, hovered) : null),
-    [hovered]
+  const positions = useMemo(
+    () => ({
+      notes: "left-[12%] top-[22%]",
+      research: "right-[10%] top-[24%]",
+      projects: "left-[10%] bottom-[18%]",
+      docs: "right-[9%] bottom-[19%]",
+    }),
+    [],
   );
 
-  const floatClass = (i: number) =>
-    i % 3 === 0 ? "animate-float-a" : i % 3 === 1 ? "animate-float-b" : "animate-float-c";
-
   return (
-    <div
-      ref={wrapRef}
-      className="relative mx-auto w-full max-w-[860px] overflow-hidden rounded-[28px] border border-mist bg-white px-3 pt-3 pb-5 shadow-pop max-sm:rounded-[20px]"
-      onMouseMove={calm ? undefined : onMove}
-      onMouseLeave={onLeave}
-    >
-      <div className="bg-blueprint pointer-events-none absolute inset-0" aria-hidden="true" />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_300px_at_50%_0%,var(--color-accent-faint),transparent_70%)]"
-        aria-hidden="true"
-      />
-      <motion.div
-        className="pointer-events-none absolute top-[46%] left-1/2 -mt-[170px] -ml-[170px] h-[340px] w-[340px] bg-[radial-gradient(circle,rgba(79,70,229,0.12),transparent_65%)]"
-        style={{ x: glowX, y: glowY }}
-      />
-      <svg
-        viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className="relative block h-auto w-full overflow-visible"
-        role="img"
-        aria-label="Knowledge graph connecting notes, projects, research, ideas, documents, databases and people around VaultGraph"
-      >
-        {/* Edges */}
-        <motion.g style={calm ? undefined : { x: edgeX, y: edgeY }}>
-          {EDGES.map((e, i) => {
-            const a = nodeById(NODES, e.from);
-            const b = nodeById(NODES, e.to);
-            const hot =
-              hovered !== null && (e.from === hovered || e.to === hovered);
-            const dim = near !== null && !hot;
-            return (
-              <g key={`${e.from}-${e.to}`}>
-                <motion.path
-                  d={line(a, b)}
-                  className="fill-none transition-[opacity,stroke] duration-300"
-                  style={{
-                    opacity: dim ? 0.1 : hot ? 1 : 0.55,
-                    stroke: hot ? "#4f46e5" : "#d8d8e1",
-                    strokeWidth: hot ? 2 : 1.4,
-                  }}
-                  initial={calm ? false : { pathLength: 0 }}
-                  whileInView={calm ? undefined : { pathLength: 1 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.9, delay: 0.15 + i * 0.06 }}
-                />
-                {!calm && (
-                  <path
-                    d={line(a, b)}
-                    className="pointer-events-none fill-none stroke-accent stroke-[1.4px] animate-dash"
-                    strokeDasharray="4 10"
-                    style={{ opacity: dim ? 0.04 : hot ? 0.9 : 0.3 }}
-                  />
-                )}
-              </g>
-            );
-          })}
-        </motion.g>
+    <div className="relative mx-auto w-full max-w-[900px] overflow-hidden rounded-[28px] border border-[#e7e7ea] bg-[#fafafa]">
+      {/* workspace */}
+      <div className="relative h-[500px] overflow-hidden sm:h-[560px]">
+        {/* subtle desk grid */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "linear-gradient(#eeeeef 1px, transparent 1px), linear-gradient(90deg, #eeeeef 1px, transparent 1px)",
+            backgroundSize: "42px 42px",
+            maskImage:
+              "radial-gradient(circle at center, black, transparent 72%)",
+          }}
+        />
 
-        {/* Nodes */}
-        <motion.g style={calm ? undefined : { x: nodeX, y: nodeY }}>
-          {NODES.map((n, i) => {
-            const isCenter = n.id === "vault";
-            const dim = near !== null && !near.has(n.id);
-            const hot = hovered === n.id;
-            const r = n.radius ?? 30;
-            return (
-              <motion.g
-                key={n.id}
-                initial={calm ? false : { opacity: 0, scale: 0.6 }}
-                whileInView={calm ? undefined : { opacity: 1, scale: 1 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{
-                  duration: 0.7,
-                  delay: 0.1 + i * 0.07,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="tbox"
-              >
-                <g
-                  ref={(el) => {
-                    if (el) nodeEls.current.set(n.id, el);
-                    else nodeEls.current.delete(n.id);
-                  }}
-                  className="tbox"
-                >
-                  <g className={calm ? undefined : `${floatClass(i)} tbox`}>
-                    <g className={calm ? undefined : "animate-breathe tbox"}>
-                      {isCenter && (
-                        <circle
-                          cx={n.x}
-                          cy={n.y}
-                          r={r + 12}
-                          className="tbox animate-spin-slower fill-none stroke-accent/35 stroke-[1.4px]"
-                          strokeDasharray="3 7"
-                        />
-                      )}
-                      <circle
-                        cx={n.x}
-                        cy={n.y}
-                        r={r}
-                        className={`${NODE_BASE} [filter:drop-shadow(0_6px_14px_rgba(11,11,16,0.1))]`}
-                        data-hot={hot}
-                        data-dim={dim}
-                        data-center={isCenter}
-                        onMouseEnter={() => setHovered(n.id)}
-                        onFocus={() => setHovered(n.id)}
-                        onBlur={() => setHovered(null)}
-                        tabIndex={0}
-                        role="button"
-                        aria-label={`${n.label} node`}
-                      />
-                      {!isCenter && (
-                        <circle
-                          cx={n.x}
-                          cy={n.y - r + 9}
-                          r={4.5}
-                          fill={n.accent}
-                          pointerEvents="none"
-                        />
-                      )}
-                      {isCenter && (
-                        <text
-                          x={n.x}
-                          y={n.y + 2}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          className="pointer-events-none fill-white font-sans text-[26px] font-bold"
-                        >
-                          V
-                        </text>
-                      )}
-                      <text
-                        x={n.x}
-                        y={n.y + r + 22}
-                        textAnchor="middle"
-                        className={`${LABEL_BASE} max-sm:text-base`}
-                        data-hot={hot}
-                        data-dim={dim}
-                        data-center={isCenter}
-                        pointerEvents="none"
-                      >
-                        {n.label}
-                      </text>
-                    </g>
-                  </g>
-                </g>
-              </motion.g>
-            );
-          })}
-        </motion.g>
-      </svg>
+        {/* header */}
+        <div className="absolute left-6 right-6 top-5 z-30 flex items-center justify-between sm:left-8 sm:right-8">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-[#111116] text-[9px] font-bold text-white">
+              V
+            </span>
+
+            <span className="text-[11px] font-medium text-[#6f6f78]">
+              VaultGraph
+            </span>
+          </div>
+
+          <span className="text-[10px] text-[#aaaab2]">
+            your workspace
+          </span>
+        </div>
+
+        {/* documents */}
+        {FILES.map((file, index) => (
+          <motion.div
+            key={file.id}
+            className={`absolute z-10 ${positions[file.id as keyof typeof positions]}`}
+            initial={calm ? false : { opacity: 0, scale: 0.92 }}
+            whileInView={
+              calm
+                ? undefined
+                : {
+                    opacity: 1,
+                    scale: 1,
+                  }
+            }
+            viewport={{ once: true }}
+            transition={{
+              duration: 0.5,
+              delay: index * 0.08,
+            }}
+            onMouseEnter={() => setActive(file.id)}
+            onMouseLeave={() => setActive(null)}
+          >
+            <Document label={file.label} rotate={file.rotate} />
+          </motion.div>
+        ))}
+
+        {/* connection lines */}
+        <svg
+          className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
+          viewBox="0 0 900 500"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <motion.path
+            d="M225 180 C320 190 330 245 390 250"
+            fill="none"
+            stroke={active === "notes" ? "#111116" : "#e8e8ea"}
+            strokeWidth="1"
+          />
+
+          <motion.path
+            d="M675 190 C580 195 565 245 510 250"
+            fill="none"
+            stroke={active === "research" ? "#111116" : "#e8e8ea"}
+            strokeWidth="1"
+          />
+
+          <motion.path
+            d="M220 390 C300 350 345 320 390 300"
+            fill="none"
+            stroke={active === "projects" ? "#111116" : "#e8e8ea"}
+            strokeWidth="1"
+          />
+
+          <motion.path
+            d="M680 390 C600 350 555 320 510 300"
+            fill="none"
+            stroke={active === "docs" ? "#111116" : "#e8e8ea"}
+            strokeWidth="1"
+          />
+        </svg>
+
+        {/* bot */}
+        <Bot calm={calm} />
+
+        {/* desk */}
+        <motion.div
+          className="absolute bottom-[8%] left-1/2 z-10 h-[7px] w-[250px] -translate-x-1/2 rounded-full bg-[#dedee2]"
+          animate={
+            calm
+              ? undefined
+              : {
+                  scaleX: [1, 1.01, 1],
+                }
+          }
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+          }}
+        />
+
+        {/* caption */}
+        <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap text-[10px] text-[#a1a1aa]">
+          Your knowledge is always being connected.
+        </div>
+      </div>
     </div>
   );
 }
