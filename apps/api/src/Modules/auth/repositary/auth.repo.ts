@@ -1,49 +1,44 @@
 import { db } from "../../../prisma/db";
-import type { LoginInput, RegisterInput } from "@vaultgraph/shared/auth-types";
+import type { CreateUserData } from "@repo/shared/auth-types";
 
-export class authRepositary{
-    constructor(
-        private readonly authDB:typeof db
-    ){}
+export class AuthRepository {
+  constructor(private readonly authDB: typeof db = db) {}
 
-    register=async(data:RegisterInput)=>{
-        const user=await this.authDB.orm.public.User.create({
-            username:data.username,
-            email:data.email,
-            hashPassword:data.password
-        })
-        return user
-    }
-    login = async (data: LoginInput) => {
-        const user = await this.authDB.orm.public.User.first({
-            email: data.email,
+  register = async (data: CreateUserData) => {
+    const user = await this.authDB.orm.public.User.create({
+      username: data.username,
+      email: data.email,
+      hashPassword: data.hashPassword,
     });
+    return user;
+  };
 
-        return user;
-    };
+  findByEmail = async (email: string) => {
+    const user = await this.authDB.orm.public.User.first({
+      email: email,
+    });
+    return user;
+  };
 
-    findBiID=async(id:string)=>{
-        const user=await this.authDB.orm.public.User.first({
-            id:id
-        })
-        return user
-    }
+  findById = async (id: string) => {
+    const user = await this.authDB.orm.public.User.first({
+      id: id,
+    });
+    return user;
+  };
 
-    findByEmail=async(email:string)=>{
-        const user=await this.authDB.orm.public.User.first({
-            email:email
-        })
-        return user
-    }
+  findByUsername = async (username: string) => {
+    const user = await this.authDB.orm.public.User.first({
+      username: username,
+    });
+    return user;
+  };
 
-    findByUsername=async(username:string)=>{
-        const user=await this.authDB.orm.public.User.first({
-            username:username
-        })
-        return user
-    }
-
-    
-
-
+  /** @deprecated Typo alias. Use `findById`. */
+  findBiID = this.findById;
 }
+
+/** @deprecated Typo alias. Use `AuthRepository`. */
+export const authRepositary = AuthRepository;
+
+export const authRepository = new AuthRepository(db);
