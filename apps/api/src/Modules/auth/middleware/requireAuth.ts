@@ -13,7 +13,8 @@ export const requireAuth = async (
   next: NextFunction
 ) => {
   try {
-    const header = req.headers.authorization;
+    const header = req.headers.authorization || req?.cookies?.refreshToken;
+    console.log(header);
     if (!header?.startsWith("Bearer ")) {
       throw new HttpError("Missing or invalid authorization header", 401);
     }
