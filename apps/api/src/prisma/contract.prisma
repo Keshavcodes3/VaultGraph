@@ -83,7 +83,13 @@ model Page {
   slug        String?
   icon        String?
   cover       String?
+  description String?
+  position    Int       @default(0)
   isPublished Boolean   @default(false)
+  isFavorite  Boolean   @default(false)
+  isArchived  Boolean   @default(false)
+  isPublic    Boolean   @default(false)
+  createdBy   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -96,20 +102,27 @@ model Page {
   @@index([workspaceId])
   @@index([projectId])
   @@index([parentId])
+  @@index([workspaceId, projectId, parentId])
+  @@index([workspaceId, isArchived])
 }
 
 model Block {
   id        String    @id @default(uuid())
   pageId    String
+  parentId  String?
   type      BlockType
   content   Json
   position  Int
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now())
   page      Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  parent    Block?    @relation("BlockTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Block[]   @relation("BlockTree")
 
   @@index([pageId])
   @@index([pageId, position])
+  @@index([parentId])
+  @@index([pageId, parentId, position])
 }
 
 enum MemberRole {
@@ -133,6 +146,7 @@ enum BlockType {
   PARAGRAPH
   TODO
   BULLET
+  BULLETED_LIST
   NUMBERED_LIST
   CODE
   QUOTE
@@ -140,5 +154,6 @@ enum BlockType {
   IMAGE
   FILE
   LINK
+  BOOKMARK
   CALLOUT
 }

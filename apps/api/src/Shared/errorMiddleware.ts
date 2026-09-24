@@ -11,6 +11,14 @@ import {
   ProjectNotFoundError,
   ProjectSlugAlreadyExistsError,
 } from "../Modules/Projects/utils/project.errors";
+import {
+  BlockAccessDeniedError,
+  BlockHierarchyError,
+  BlockNotFoundError,
+  PageAccessDeniedError,
+  PageHierarchyError,
+  PageNotFoundError,
+} from "../Modules/Pages/Utils/page.errors";
 
 const isUniqueViolation = (err: unknown) => {
   const e = err as { code?: string; sqlState?: string; constraint?: string };
@@ -51,6 +59,30 @@ export const errorHandler = (
 
   if (err instanceof ProjectSlugAlreadyExistsError) {
     return apiError(res, err.message, 409);
+  }
+
+  if (err instanceof PageNotFoundError) {
+    return apiError(res, err.message, 404);
+  }
+
+  if (err instanceof BlockNotFoundError) {
+    return apiError(res, err.message, 404);
+  }
+
+  if (err instanceof PageAccessDeniedError) {
+    return apiError(res, err.message, 403);
+  }
+
+  if (err instanceof BlockAccessDeniedError) {
+    return apiError(res, err.message, 403);
+  }
+
+  if (err instanceof PageHierarchyError) {
+    return apiError(res, err.message, 400);
+  }
+
+  if (err instanceof BlockHierarchyError) {
+    return apiError(res, err.message, 400);
   }
 
   if (isUniqueViolation(err)) {

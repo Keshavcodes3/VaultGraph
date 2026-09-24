@@ -71,6 +71,12 @@ export const api = {
   patch: <T>(path: string, body: Record<string, string | undefined>) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   remove: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  // JSON helpers for Page + Block payloads (nested content objects,
+  // nullable ids, positions). Preserves the string-only helpers above.
+  postJson: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "POST", body: JSON.stringify(body ?? {}) }),
+  patchJson: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "PATCH", body: JSON.stringify(body ?? {}) }),
 };
 
 /** Mirror of the API's public user shape (dates arrive as ISO strings). */

@@ -8,6 +8,7 @@
     "./auth-types": "./types/Auth/auth.types.ts",
     "./workspace-types": "./types/workspace/workspace.types.ts",
     "./project-types": "./types/Project/project.types.ts",
+    "./pages-types": "./types/Pages/pages.types.ts",
     "./package.json": "./package.json"
   },
   "scripts": {
