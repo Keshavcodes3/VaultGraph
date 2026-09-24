@@ -11,8 +11,22 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { ChatMsg } from "./data";
-import { SUGGESTIONS } from "./data";
+
+/** A single Vaulty chat message (UI-local type; Vaulty has no backend yet). */
+export interface ChatMsg {
+  id: string;
+  role: "user" | "vaulty";
+  content: string;
+  sources?: string[];
+}
+
+/** Starter prompts shown in the Vaulty welcome state (static UI copy). */
+export const SUGGESTIONS: string[] = [
+  "What did I work on this week?",
+  "Show pages connected to the roadmap",
+  "Summarize my open todos",
+  "Find notes about the sync engine",
+];
 
 /* -------------------------------------------------------------------------- */
 /* Vaulty                                                                      */

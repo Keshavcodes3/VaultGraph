@@ -15,6 +15,7 @@ interface CanvasProps {
   onPatchBlocks: (blocks: Block[]) => void;
   onMeta: (patch: Partial<PageItem>) => void;
   onDbChange: (rows: DbRow[]) => void;
+  ownerName?: string;
 }
 
 /**
@@ -106,6 +107,7 @@ export default function PageCanvas(p: CanvasProps) {
         dbRows={p.dbRows}
         onPatch={p.onPatchBlocks}
         onDbChange={p.onDbChange}
+        ownerName={p.ownerName}
       />
 
       <div className="mt-12 flex items-center gap-2 border-t border-line px-1 pt-4 font-mono text-[11px] text-faint">

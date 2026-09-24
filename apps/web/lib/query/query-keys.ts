@@ -4,6 +4,12 @@ export const authKeys = {
   me: ["auth", "me"] as const,
 };
 
+export const workspaceKeys = {
+  all: ["workspaces"] as const,
+  detail: (workspaceId: string) =>
+    [...workspaceKeys.all, "detail", workspaceId] as const,
+};
+
 export const projectKeys = {
   all: ["projects"] as const,
   byWorkspace: (workspaceId: string) =>

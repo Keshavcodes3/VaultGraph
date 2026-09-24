@@ -17,6 +17,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/node": "^26.6.2",
+    "@types/pg": "^8.15.5",
     "prisma": "^8.0.0-rc.15",
     "tsx": "^4.23.15"
   },
@@ -33,6 +34,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0"
   }
 }

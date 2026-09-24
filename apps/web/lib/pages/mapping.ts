@@ -1,7 +1,8 @@
 "use client";
 
-import type { ApiBlock, ApiPage } from "@/lib/api/blocks";
-import type { Block, BlockType, PageItem } from "@/components/workspace/data";
+import type { ApiBlock } from "@/lib/api/blocks";
+import type { ApiPage, ApiPageTreeNode } from "@/lib/api/pages";
+import type { Block, BlockType, PageItem, TrashItem } from "@/components/workspace/data";
 
 /** DB (uppercase) -> editor block type. Extensible, single place. */
 export function apiBlockTypeToEditor(
@@ -82,10 +83,38 @@ export function editorBlockTypeToApi(type: BlockType): string {
   }
 }
 
+/** All editor block types (used to validate a stored editorType). */
+const EDITOR_BLOCK_TYPES: ReadonlySet<string> = new Set<string>([
+  "paragraph",
+  "h1",
+  "h2",
+  "h3",
+  "bullet",
+  "numbered",
+  "checkbox",
+  "quote",
+  "code",
+  "callout",
+  "divider",
+  "toggle",
+  "image",
+  "video",
+  "file",
+  "table",
+  "database",
+]);
+
 /** API block -> editor block (content object -> editor fields). */
 export function apiBlockToEditor(b: ApiBlock): Block {
   const content = (b.content ?? {}) as Record<string, unknown>;
-  const type = apiBlockTypeToEditor(b.type, content);
+  // Editor-only types (database/toggle/table/video) share a DB enum with a
+  // native type, so the exact editor type round-trips inside content.
+  // The server preserves unknown content keys (normalizeBlockContent).
+  const stored = content["editorType"];
+  const type =
+    typeof stored === "string" && EDITOR_BLOCK_TYPES.has(stored)
+      ? (stored as BlockType)
+      : apiBlockTypeToEditor(b.type, content);
   const text =
     typeof content["text"] === "string" ? (content["text"] as string) : "";
   const editor: Block = {
@@ -111,7 +140,12 @@ export function apiBlockToEditor(b: ApiBlock): Block {
 
 /** Editor block -> API payload (editor fields -> content object). */
 export function editorBlockToApiPayload(b: Block): Record<string, unknown> {
-  const content: Record<string, unknown> = { text: b.content ?? "" };
+  const content: Record<string, unknown> = {
+    text: b.content ?? "",
+    // Round-trips editor-only types (database/toggle/table/video) that share
+    // a DB enum; see apiBlockToEditor. Server preserves this key.
+    editorType: b.type,
+  };
   if (b.checked !== undefined) content["checked"] = b.checked;
   if (b.language) content["language"] = b.language;
   if (b.url) content["url"] = b.url;
@@ -154,4 +188,83 @@ export function apiPageToEditor(
       ? editorBlocks
       : [{ id: `b-empty`, type: "paragraph", content: "" }],
   };
+}
+
+/** API page tree node -> sidebar PageItem (tree chrome only: no blocks). */
+export function apiTreeNodeToPageItem(node: ApiPageTreeNode): PageItem {
+  return {
+    id: node.id,
+    title: node.title ?? "",
+    icon: node.icon ?? "📄",
+    description: node.description ?? "",
+    cover: node.cover ?? undefined,
+    favorite: node.isFavorite ?? false,
+    updatedAt: node.updatedAt,
+    blocks: [],
+    children: (node.children ?? []).map(apiTreeNodeToPageItem),
+  };
+}
+
+/** API page tree -> sidebar PageItem tree (same order as the server). */
+export function apiTreeToPageItems(tree: ApiPageTreeNode[]): PageItem[] {
+  return (tree ?? []).map(apiTreeNodeToPageItem);
+}
+
+/** Flat API page (e.g. archived list) -> TrashItem for the TrashView. */
+export function apiPageToTrashItem(page: ApiPage): TrashItem {
+  return {
+    page: {
+      id: page.id,
+      title: page.title ?? "",
+      icon: page.icon ?? "📄",
+      description: page.description ?? "",
+      cover: page.cover ?? undefined,
+      favorite: page.isFavorite ?? false,
+      updatedAt: page.updatedAt,
+      blocks: [],
+    },
+    parentId: page.parentId,
+    deletedAt: page.updatedAt,
+  };
+}
+
+/** Find a node in an API page tree by id. */
+export function findApiTreeNode(
+  tree: ApiPageTreeNode[],
+  id: string
+): ApiPageTreeNode | null {
+  for (const node of tree) {
+    if (node.id === id) return node;
+    if (node.children?.length) {
+      const found = findApiTreeNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/** Siblings of a node: children of its parent (or roots when parentless). */
+export function siblingIdsOfTree(
+  tree: ApiPageTreeNode[],
+  id: string
+): string[] | null {
+  const parent = findApiParent(tree, id);
+  if (parent === undefined) return null;
+  const siblings = parent ? (parent.children ?? []) : tree;
+  return siblings.map((s) => s.id);
+}
+
+/** Parent of a node in an API page tree (`null` = root, `undefined` = missing). */
+export function findApiParent(
+  tree: ApiPageTreeNode[],
+  id: string
+): ApiPageTreeNode | null | undefined {
+  for (const node of tree) {
+    if ((node.children ?? []).some((c) => c.id === id)) return node;
+    if (node.children?.length) {
+      const found = findApiParent(node.children, id);
+      if (found !== undefined) return found;
+    }
+  }
+  return tree.some((n) => n.id === id) ? null : undefined;
 }

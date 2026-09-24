@@ -61,6 +61,10 @@
                 "value": "BULLET"
               },
               {
+                "name": "BULLETED_LIST",
+                "value": "BULLETED_LIST"
+              },
+              {
                 "name": "NUMBERED_LIST",
                 "value": "NUMBERED_LIST"
               },
@@ -87,6 +91,10 @@
               {
                 "name": "LINK",
                 "value": "LINK"
+              },
+              {
+                "name": "BOOKMARK",
+                "value": "BOOKMARK"
               },
               {
                 "name": "CALLOUT",
@@ -172,6 +180,13 @@
                   "kind": "scalar"
                 }
               },
+              "parentId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "position": {
                 "nullable": false,
                 "type": {
@@ -201,6 +216,21 @@
               }
             },
             "relations": {
+              "children": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "parentId"
+                  ]
+                },
+                "to": {
+                  "model": "Block",
+                  "namespace": "public"
+                }
+              },
               "page": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -214,6 +244,22 @@
                 },
                 "to": {
                   "model": "Page",
+                  "namespace": "public"
+                }
+              },
+              "parent": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "parentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Block",
                   "namespace": "public"
                 }
               }
@@ -231,6 +277,9 @@
                 },
                 "pageId": {
                   "column": "pageId"
+                },
+                "parentId": {
+                  "column": "parentId"
                 },
                 "position": {
                   "column": "position"
@@ -508,6 +557,20 @@
                   "kind": "scalar"
                 }
               },
+              "createdBy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "icon": {
                 "nullable": true,
                 "type": {
@@ -522,6 +585,27 @@
                   "kind": "scalar"
                 }
               },
+              "isArchived": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "isFavorite": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "isPublic": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "isPublished": {
                 "nullable": false,
                 "type": {
@@ -533,6 +617,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "position": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -660,17 +751,35 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "createdBy": {
+                  "column": "createdBy"
+                },
+                "description": {
+                  "column": "description"
+                },
                 "icon": {
                   "column": "icon"
                 },
                 "id": {
                   "column": "id"
                 },
+                "isArchived": {
+                  "column": "isArchived"
+                },
+                "isFavorite": {
+                  "column": "isFavorite"
+                },
+                "isPublic": {
+                  "column": "isPublic"
+                },
                 "isPublished": {
                   "column": "isPublished"
                 },
                 "parentId": {
                   "column": "parentId"
+                },
+                "position": {
+                  "column": "position"
                 },
                 "projectId": {
                   "column": "projectId"
@@ -1072,8 +1181,8 @@
             "block": {
               "checks": [
                 {
-                  "expression": "\"type\" IN ('TEXT', 'HEADING', 'PARAGRAPH', 'TODO', 'BULLET', 'NUMBERED_LIST', 'CODE', 'QUOTE', 'DIVIDER', 'IMAGE', 'FILE', 'LINK', 'CALLOUT')",
-                  "name": "block_type_check_45b35640",
+                  "expression": "\"type\" IN ('TEXT', 'HEADING', 'PARAGRAPH', 'TODO', 'BULLET', 'BULLETED_LIST', 'NUMBERED_LIST', 'CODE', 'QUOTE', 'DIVIDER', 'IMAGE', 'FILE', 'LINK', 'BOOKMARK', 'CALLOUT')",
+                  "name": "block_type_check_ddab3903",
                   "prefix": "block_type_check"
                 }
               ],
@@ -1101,6 +1210,11 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "parentId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "position": {
                   "codecId": "pg/int4@1",
@@ -1145,6 +1259,23 @@
                     "namespaceId": "public",
                     "tableName": "page"
                   }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "parentId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "block"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "block"
+                  }
                 }
               ],
               "indexes": [
@@ -1159,10 +1290,28 @@
                 {
                   "columns": [
                     "pageId",
+                    "parentId",
+                    "position"
+                  ],
+                  "name": "block_pageId_parentId_position_idx_9b7dd000",
+                  "prefix": "block_pageId_parentId_position_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "pageId",
                     "position"
                   ],
                   "name": "block_pageId_position_idx_1a780749",
                   "prefix": "block_pageId_position_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "parentId"
+                  ],
+                  "name": "block_parentId_idx_6a68f597",
+                  "prefix": "block_parentId_idx",
                   "unique": false
                 }
               ],
@@ -1474,6 +1623,16 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "createdBy": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "description": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "icon": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1482,6 +1641,33 @@
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "isArchived": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "isFavorite": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "isPublic": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "isPublished": {
@@ -1497,6 +1683,15 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
+                },
+                "position": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
                 },
                 "projectId": {
                   "codecId": "pg/text@1",
@@ -1604,6 +1799,25 @@
                   ],
                   "name": "page_workspaceId_idx_ba65f874",
                   "prefix": "page_workspaceId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "workspaceId",
+                    "isArchived"
+                  ],
+                  "name": "page_workspaceId_isArchived_idx_3bf5331f",
+                  "prefix": "page_workspaceId_isArchived_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "workspaceId",
+                    "projectId",
+                    "parentId"
+                  ],
+                  "name": "page_workspaceId_projectId_parentId_idx_e0f982bf",
+                  "prefix": "page_workspaceId_projectId_parentId_idx",
                   "unique": false
                 }
               ],
@@ -1853,6 +2067,7 @@
                 "PARAGRAPH",
                 "TODO",
                 "BULLET",
+                "BULLETED_LIST",
                 "NUMBERED_LIST",
                 "CODE",
                 "QUOTE",
@@ -1860,6 +2075,7 @@
                 "IMAGE",
                 "FILE",
                 "LINK",
+                "BOOKMARK",
                 "CALLOUT"
               ]
             },
@@ -1888,7 +2104,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e417a8fb4319f82c4a0472419fb78ade362e93cd25f3e313ba40bd6ce8d32467"
+    "storageHash": "85f9c383507b4742e2b2c944e28c4b7d15832e61f3a0543406506a5980cebae2"
   },
   "execution": {
     "executionHash": "76815629cca8924b1e89c24185babb1bfa0c777fa3f2758f782deecfbaa9f71a",

@@ -10,6 +10,7 @@ import { usePage } from "@/hooks/pages/use-page";
 import { useFavoritePage } from "@/hooks/pages/use-page-mutations";
 import { useAutosave } from "@/hooks/pages/use-autosave";
 import { blocksApi, type ApiBlock } from "@/lib/api/blocks";
+import { ApiError } from "@/lib/api/client";
 import { pagesApi } from "@/lib/api/pages";
 import { blockKeys, pageKeys } from "@/lib/query/query-keys";
 import {
@@ -45,7 +46,15 @@ function blocksEqual(a: ApiBlock[], b: Block[]): boolean {
  * keyboard, drag-reorder) and adds debounced persistence, loading, error
  * and empty states on top. No admin-dashboard chrome.
  */
-export default function PageView({ pageId }: { pageId: string }) {
+export default function PageView({
+  pageId,
+  propsOpen = false,
+  onToggleProps,
+}: {
+  pageId: string;
+  propsOpen?: boolean;
+  onToggleProps?: () => void;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = usePage(pageId);
@@ -57,15 +66,6 @@ export default function PageView({ pageId }: { pageId: string }) {
   pageIdRef.current = pageId;
   const setEditorPageRef = useRef(setEditorPage);
   setEditorPageRef.current = setEditorPage;
-
-  // Sync server -> local only on page change / fresh load (never clobber
-  // in-flight edits: subsequent server polls merge by id below).
-  useEffect(() => {
-    if (!data) return;
-    serverBlocks.current = data.blocks;
-    setEditorPage(apiPageToEditor(data.page, data.blocks));
-    setSaveError(null);
-  }, [data, pageId]);
 
   const crumbs = useMemo(() => {
     if (!data) return [{ id: pageId, title: "Untitled" }];
@@ -90,7 +90,11 @@ export default function PageView({ pageId }: { pageId: string }) {
   // then issue minimal create/update/delete calls (debounced). Positions are
   // written per block, so ordering persists without a separate reorder call
   // (avoids mixing parent scopes; nested server blocks keep their parent).
-  const blockSave = useCallback(async (next: Block[]) => {
+  // Saves run strictly one at a time (chained): overlapping saves would
+  // otherwise read the same stale snapshot and double-delete a block,
+  // surfacing a phantom 404 + error banner.
+  const blockSaveChain = useRef(Promise.resolve());
+  const blockSaveInner = useCallback(async (next: Block[]) => {
     const id = pageIdRef.current;
     const prev = serverBlocks.current;
     const prevById = new Map(prev.map((b) => [b.id, b]));
@@ -98,9 +102,15 @@ export default function PageView({ pageId }: { pageId: string }) {
 
     // Delete removed top-level blocks. Nested server blocks (parentId set)
     // are preserved — the flat editor surface doesn't own their hierarchy.
+    // A 404 here means "already gone" (deleted elsewhere/cascade) — not an
+    // error, the desired end state already holds.
     for (const b of prev) {
       if (!nextIds.has(b.id) && !b.parentId) {
-        await blocksApi.remove(b.id);
+        try {
+          await blocksApi.remove(b.id);
+        } catch (error) {
+          if (!(error instanceof ApiError && error.status === 404)) throw error;
+        }
       }
     }
     // Create / update in editor order (positions follow array order).
@@ -158,7 +168,29 @@ export default function PageView({ pageId }: { pageId: string }) {
     queryClient.invalidateQueries({ queryKey: pageKeys.detail(id) });
   }, [queryClient]);
 
+  const blockSave = useCallback((next: Block[]) => {
+    const run = () => blockSaveInner(next);
+    const chained: Promise<unknown> = blockSaveChain.current.then(run, run);
+    // Keep the chain alive for the next save even when this one fails;
+    // the rejection still reaches useAutosave so real errors surface.
+    blockSaveChain.current = chained.catch(() => {});
+    return chained;
+  }, [blockSaveInner]);
+
   const blockAutosave = useAutosave(blockSave, 900);
+
+  // Sync server -> local on page change / settled load. While a debounced
+  // save is pending, in flight, or failed, local state is newer than the
+  // server snapshot — resetting here would eat fresh keystrokes, so skip it
+  // (it converges on the next successful save). Header/meta reads `data`
+  // directly, so it still stays fresh while typing.
+  useEffect(() => {
+    if (!data) return;
+    serverBlocks.current = data.blocks;
+    if (blockAutosave.state !== "saved" || metaAutosave.state !== "saved") return;
+    setEditorPage(apiPageToEditor(data.page, data.blocks));
+    setSaveError(null);
+  }, [data, pageId, blockAutosave.state, metaAutosave.state]);
 
   useEffect(() => {
     if (blockAutosave.state === "error") {
@@ -265,13 +297,13 @@ export default function PageView({ pageId }: { pageId: string }) {
         crumbs={crumbs}
         isFavorite={data.page.isFavorite}
         saveState={saveState}
-        propsOpen={false}
+        propsOpen={propsOpen}
         onSelectCrumb={(id) => {
           if (id !== pageId) router.push(`/workspace/${id}`);
         }}
         onToggleFav={toggleFav}
         onCopyLink={copyLink}
-        onToggleProps={() => {}}
+        onToggleProps={onToggleProps ?? (() => {})}
         onOpenSidebar={() => router.push("/workspace")}
       />
       {saveError ? (

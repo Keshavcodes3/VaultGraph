@@ -40,11 +40,13 @@ export default function DatabaseView({
   rows,
   onChange,
   compact,
+  ownerName = "You",
 }: {
   title?: string;
   rows: DbRow[];
   onChange: (rows: DbRow[]) => void;
   compact?: boolean;
+  ownerName?: string;
 }) {
   const [view, setView] = useState<View>("table");
   const [q, setQ] = useState("");
@@ -65,7 +67,7 @@ export default function DatabaseView({
   const addRow = () =>
     onChange([
       ...rows,
-      { id: uid("db"), name: "Untitled", status: "Planning", owner: "Keshav", updated: "Just now" },
+      { id: uid("db"), name: "Untitled", status: "Planning", owner: ownerName, updated: "Just now" },
     ]);
 
   const advance = (id: string) =>

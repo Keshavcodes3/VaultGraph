@@ -11,6 +11,7 @@ interface PropsPanelProps {
   page: PageItem | null;
   parentTitle: string | null;
   activity: ActivityItem[];
+  ownerName?: string;
   onToggleFav: () => void;
   onClose: () => void;
 }
@@ -60,7 +61,7 @@ export default function PageProperties(p: PropsPanelProps) {
                 </div>
                 <div className="flex items-center justify-between gap-3 rounded-md px-1 py-1.5">
                   <dt className="text-faint">Owner</dt>
-                  <dd className="text-ink dark:text-[#F5F5F5]">Keshav</dd>
+                  <dd className="text-ink dark:text-[#F5F5F5]">{p.ownerName ?? "—"}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-3 rounded-md px-1 py-1.5">
                   <dt className="text-faint">Parent</dt>

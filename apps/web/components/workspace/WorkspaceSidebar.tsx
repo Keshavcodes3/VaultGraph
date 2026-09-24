@@ -6,6 +6,7 @@ import {
   ChevronsLeft,
   Clock3,
   FilePlus2,
+  FolderKanban,
   Inbox,
   Moon,
   Plus,
@@ -13,6 +14,7 @@ import {
   Settings,
   Sun,
   Trash2,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import SidebarTree from "./SidebarTree";
@@ -20,11 +22,29 @@ import type { MoveTarget } from "./SidebarItem";
 import Tooltip from "./Tooltip";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import { PageIcon } from "./PageIcon";
-import { WORKSPACES, findPage, type PageItem } from "./data";
+import { findPage, type PageItem } from "./data";
+
+export interface SidebarWorkspace {
+  id: string;
+  name: string;
+}
+
+export interface SidebarProject {
+  id: string;
+  name: string;
+}
 
 interface SidebarProps {
-  workspaceId: string;
+  workspaces: SidebarWorkspace[];
+  workspaceId: string | null;
+  workspacesLoading: boolean;
+  displayName: string | null;
   pages: PageItem[];
+  pagesLoading: boolean;
+  pagesError: boolean;
+  projects: SidebarProject[];
+  projectsLoading: boolean;
+  activeProjectId: string | null;
   activeId: string | null;
   recentIds: string[];
   trashCount: number;
@@ -33,6 +53,7 @@ interface SidebarProps {
   theme: "light" | "dark";
   moveTargets: MoveTarget[];
   onSwitchWorkspace: (id: string) => void;
+  onCreateWorkspace: (name: string) => void;
   onSelect: (id: string) => void;
   onNewPage: (parentId?: string | null) => void;
   onToggleFav: (id: string) => void;
@@ -42,6 +63,11 @@ interface SidebarProps {
   onCopyLink: (id: string) => void;
   onMoveTo: (pageId: string, parentId: string | null) => void;
   onMove: (dragId: string, targetId: string, pos: import("./data").DropPosition) => void;
+  onRetryPages: () => void;
+  onSelectProject: (id: string | null) => void;
+  onNewProject: () => void;
+  onRenameProject: (id: string, name: string) => void;
+  onDeleteProject: (id: string) => void;
   onOpenSearch: () => void;
   onCollapse: () => void;
   onCloseMobile: () => void;
@@ -85,15 +111,92 @@ function QuickRow({
   );
 }
 
+/** Inline project row: select to filter, double-click to rename, × to delete. */
+function ProjectRow({
+  project,
+  active,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
+  project: SidebarProject;
+  active: boolean;
+  onSelect: () => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(project.name);
+  return (
+    <div
+      className={`group flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-[13.5px] transition-colors duration-120 ${
+        active
+          ? "bg-soft font-medium text-ink dark:bg-white/10 dark:text-[#F5F5F5]"
+          : "text-ink-soft hover:bg-soft hover:text-ink dark:text-[#A1A1AA] dark:hover:bg-white/5 dark:hover:text-[#F5F5F5]"
+      }`}
+    >
+      <span className="shrink-0 text-faint">
+        <FolderKanban size={15} />
+      </span>
+      {editing ? (
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            setEditing(false);
+            const name = draft.trim();
+            if (name && name !== project.name) onRename(name);
+            else setDraft(project.name);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") {
+              setDraft(project.name);
+              setEditing(false);
+            }
+          }}
+          aria-label="Project name"
+          className="min-w-0 flex-1 border-none bg-transparent p-0 text-left outline-none"
+        />
+      ) : (
+        <button
+          onClick={onSelect}
+          onDoubleClick={() => {
+            setDraft(project.name);
+            setEditing(true);
+          }}
+          title="Filter pages by project (double-click to rename)"
+          className="min-w-0 flex-1 truncate text-left"
+        >
+          {project.name || "Untitled"}
+        </button>
+      )}
+      <button
+        onClick={onDelete}
+        aria-label={`Delete ${project.name || "Untitled"}`}
+        title={`Delete ${project.name || "Untitled"}`}
+        className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-rosy focus-visible:opacity-100"
+      >
+        <X size={13} />
+      </button>
+    </div>
+  );
+}
+
 /** Compact, quiet navigation. 240–260px of hierarchy, nothing more. */
 export default function WorkspaceSidebar(p: SidebarProps) {
   const [switcher, setSwitcher] = useState(false);
-  const ws = WORKSPACES.find((w) => w.id === p.workspaceId) ?? WORKSPACES[0];
+  const ws = p.workspaces.find((w) => w.id === p.workspaceId) ?? null;
+  const wsName = ws?.name ?? (p.workspacesLoading ? "Loading…" : "No workspace");
+  const wsInitial = (wsName.trim().charAt(0) || "V").toUpperCase();
   const favs = p.pages.filter((x) => x.favorite);
   const recent = p.recentIds
     .map((id) => findPage(p.pages, id))
     .filter((x): x is PageItem => x !== null)
     .slice(0, 5);
+  const displayName = p.displayName ?? "You";
+  const userInitial = (displayName.trim().charAt(0) || "Y").toUpperCase();
 
   const body = (
     <div className="flex h-full flex-col text-[13px]">
@@ -106,17 +209,20 @@ export default function WorkspaceSidebar(p: SidebarProps) {
           className="flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-soft dark:hover:bg-white/5"
         >
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ink text-[12px] font-bold text-white dark:bg-white dark:text-ink">
-            {ws.initial}
+            {wsInitial}
           </span>
           <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold tracking-[-0.01em] text-ink dark:text-[#F5F5F5]">
-            {ws.name}
+            {wsName}
           </span>
           <ChevronDown size={14} className="shrink-0 text-faint" />
         </button>
         <WorkspaceSwitcher
           open={switcher}
-          currentId={ws.id}
+          currentId={p.workspaceId}
+          workspaces={p.workspaces}
+          loading={p.workspacesLoading}
           onSelect={p.onSwitchWorkspace}
+          onCreate={p.onCreateWorkspace}
           onClose={() => setSwitcher(false)}
         />
       </div>
@@ -168,6 +274,57 @@ export default function WorkspaceSidebar(p: SidebarProps) {
         <div>
           <div className="flex items-center justify-between px-2 pt-1 pb-1">
             <p className="font-mono text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">
+              Projects
+            </p>
+            <button
+              onClick={p.onNewProject}
+              aria-label="New project"
+              title="New project"
+              className="rounded p-1 text-faint transition-colors hover:bg-soft hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <Plus size={13} />
+            </button>
+          </div>
+          {p.projectsLoading ? (
+            <div className="space-y-1 px-1 py-1" aria-label="Loading projects">
+              <div className="h-7 animate-pulse rounded-md bg-soft dark:bg-white/5" />
+              <div className="h-7 animate-pulse rounded-md bg-soft dark:bg-white/5" />
+            </div>
+          ) : p.projects.length > 0 ? (
+            <div className="space-y-px">
+              <button
+                onClick={() => p.onSelectProject(null)}
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-[6px] text-left text-[13.5px] transition-colors duration-120 ${
+                  p.activeProjectId === null
+                    ? "bg-soft font-medium text-ink dark:bg-white/10 dark:text-[#F5F5F5]"
+                    : "text-ink-soft hover:bg-soft hover:text-ink dark:text-[#A1A1AA] dark:hover:bg-white/5 dark:hover:text-[#F5F5F5]"
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate">All pages</span>
+              </button>
+              {p.projects.map((proj) => (
+                <ProjectRow
+                  key={proj.id}
+                  project={proj}
+                  active={p.activeProjectId === proj.id}
+                  onSelect={() =>
+                    p.onSelectProject(p.activeProjectId === proj.id ? null : proj.id)
+                  }
+                  onRename={(name) => p.onRenameProject(proj.id, name)}
+                  onDelete={() => p.onDeleteProject(proj.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="px-2 py-1 text-[12.5px] text-faint">
+              No projects yet. Press + to create one.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between px-2 pt-1 pb-1">
+            <p className="font-mono text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">
               Private
             </p>
             <button
@@ -178,20 +335,44 @@ export default function WorkspaceSidebar(p: SidebarProps) {
               <FilePlus2 size={13} />
             </button>
           </div>
-          <SidebarTree
-            pages={p.pages}
-            activeId={p.activeId}
-            moveTargets={p.moveTargets}
-            onSelect={p.onSelect}
-            onAddChild={(id) => p.onNewPage(id)}
-            onFavorite={p.onToggleFav}
-            onRename={p.onRename}
-            onDuplicate={p.onDuplicate}
-            onDelete={p.onDelete}
-            onCopyLink={p.onCopyLink}
-            onMoveTo={p.onMoveTo}
-            onMove={p.onMove}
-          />
+          {p.pagesLoading ? (
+            <div className="space-y-1 px-1 py-1" aria-label="Loading pages">
+              <div className="h-7 animate-pulse rounded-md bg-soft dark:bg-white/5" />
+              <div className="h-7 animate-pulse rounded-md bg-soft dark:bg-white/5" />
+              <div className="h-7 animate-pulse rounded-md bg-soft dark:bg-white/5" />
+            </div>
+          ) : p.pagesError ? (
+            <div className="px-2 py-2">
+              <p className="text-[12.5px] text-ink-soft dark:text-[#A1A1AA]">
+                Unable to load pages.
+              </p>
+              <button
+                onClick={p.onRetryPages}
+                className="mt-1.5 rounded-md bg-soft px-2.5 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:bg-line dark:bg-white/10 dark:text-white"
+              >
+                Retry
+              </button>
+            </div>
+          ) : p.pages.length === 0 ? (
+            <p className="px-2 py-1 text-[12.5px] text-faint">
+              No pages yet. Create your first page below.
+            </p>
+          ) : (
+            <SidebarTree
+              pages={p.pages}
+              activeId={p.activeId}
+              moveTargets={p.moveTargets}
+              onSelect={p.onSelect}
+              onAddChild={(id) => p.onNewPage(id)}
+              onFavorite={p.onToggleFav}
+              onRename={p.onRename}
+              onDuplicate={p.onDuplicate}
+              onDelete={p.onDelete}
+              onCopyLink={p.onCopyLink}
+              onMoveTo={p.onMoveTo}
+              onMove={p.onMove}
+            />
+          )}
         </div>
 
         <div className="space-y-px">
@@ -220,10 +401,10 @@ export default function WorkspaceSidebar(p: SidebarProps) {
         </button>
         <div className="flex items-center gap-2 rounded-md px-1.5 py-1">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[10px] font-bold text-white dark:bg-white dark:text-ink">
-            K
+            {userInitial}
           </span>
           <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-soft dark:text-[#A1A1AA]">
-            Keshav
+            {displayName}
           </span>
           <Tooltip label={p.theme === "light" ? "Dark mode" : "Light mode"}>
             <button

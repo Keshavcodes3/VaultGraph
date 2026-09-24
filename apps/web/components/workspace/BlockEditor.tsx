@@ -172,6 +172,7 @@ interface BlockViewProps {
   onDragStart: (e: React.DragEvent) => void;
   dbRows: DbRow[];
   onDbChange: (rows: DbRow[]) => void;
+  ownerName?: string;
 }
 
 function BlockView(p: BlockViewProps) {
@@ -498,6 +499,7 @@ function BlockView(p: BlockViewProps) {
             title={block.content || "Projects"}
             rows={p.dbRows}
             onChange={p.onDbChange}
+            ownerName={p.ownerName}
           />
         </div>
         {actionsAt ? (
@@ -913,11 +915,13 @@ export default function BlockEditor({
   dbRows,
   onPatch,
   onDbChange,
+  ownerName,
 }: {
   blocks: Block[];
   dbRows: DbRow[];
   onPatch: (blocks: Block[]) => void;
   onDbChange: (rows: DbRow[]) => void;
+  ownerName?: string;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -1176,6 +1180,7 @@ export default function BlockEditor({
             onDragStart={(e) => onBlockDragStart(e, blk.id)}
             dbRows={dbRows}
             onDbChange={onDbChange}
+            ownerName={ownerName}
           />
           {dragId && over?.index === i && over.pos === "after" ? (
             <span className="absolute right-0 bottom-0 left-9 z-10 h-[2px] rounded-full bg-ink dark:bg-white" />
