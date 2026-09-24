@@ -187,7 +187,7 @@ export default function CommandPalette() {
                   className="max-h-[320px] overflow-y-auto p-2"
                 >
                   {filtered.length === 0 && (
-                    <p className="px-[18px] py-[26px] text-center text-[14.5px] text-muted">
+                    <p className="px-[18px] py-[26px] text-center text-[14.5px] text-ink-soft">
                       No results for “{query}”. Press <Kbd>N</Kbd> to create it.
                     </p>
                   )}
@@ -223,7 +223,7 @@ export default function CommandPalette() {
                           </span>
                         </span>
                         {i === active ? (
-                          <CornerDownLeft size={14} className="ml-auto shrink-0 text-accent" />
+                          <CornerDownLeft size={14} className="ml-auto shrink-0 text-brand" />
                         ) : (
                           <ArrowUpRight size={14} className="ml-auto shrink-0 text-line" />
                         )}
@@ -248,7 +248,7 @@ export default function CommandPalette() {
                 <AnimatePresence>
                   {opened && (
                     <motion.p
-                      className="px-[18px] pb-3.5 text-[13.5px] font-semibold text-accent-deep"
+                      className="px-[18px] pb-3.5 text-[13.5px] font-semibold text-brand-deep"
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}

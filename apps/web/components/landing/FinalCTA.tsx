@@ -73,7 +73,7 @@ export default function FinalCTA() {
           <h2 className="mt-[18px] text-[clamp(48px,8.4vw,104px)] leading-[1.02] font-semibold tracking-[-0.045em]">
             Start somewhere.
           </h2>
-          <div className="mt-[26px] flex flex-wrap justify-center gap-2.5 text-[clamp(16px,2.2vw,20px)] text-muted max-sm:flex-col max-sm:gap-1.5">
+          <div className="mt-[26px] flex flex-wrap justify-center gap-2.5 text-[clamp(16px,2.2vw,20px)] text-ink-soft max-sm:flex-col max-sm:gap-1.5">
             <span className="px-1">Write a note.</span>
             <span className="px-1">Connect an idea.</span>
             <span className="px-1">Build something.</span>
@@ -81,7 +81,7 @@ export default function FinalCTA() {
           <Magnetic>
             <a
               href="#top"
-              className="mt-12 inline-flex items-center gap-3 rounded-pill bg-ink py-5 pr-9 pl-10 text-lg font-semibold tracking-[-0.015em] text-white shadow-pop transition-all duration-300 hover:bg-accent hover:shadow-[0_20px_50px_-16px_rgba(79,70,229,0.6)]"
+              className="mt-12 inline-flex items-center gap-3 rounded-pill bg-ink py-5 pr-9 pl-10 text-lg font-semibold tracking-[-0.015em] text-white shadow-pop transition-all duration-300 hover:bg-brand hover:shadow-[0_20px_50px_-16px_rgba(79,70,229,0.6)]"
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
               onFocus={() => setHover(true)}

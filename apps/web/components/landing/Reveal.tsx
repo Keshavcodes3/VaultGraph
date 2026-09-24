@@ -78,7 +78,7 @@ export function SectionHeading({
       </Reveal>
       {lede ? (
         <Reveal delay={0.12}>
-          <p className="max-w-[600px] text-[clamp(16px,2vw,19px)] leading-[1.65] text-muted text-pretty">
+          <p className="max-w-[600px] text-[clamp(16px,2vw,19px)] leading-[1.65] text-ink-soft text-pretty">
             {lede}
           </p>
         </Reveal>

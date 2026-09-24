@@ -1,24 +1,144 @@
-// use prisma-next
-
 model User {
-  id           String @id @default(uuid())
-  username     String
-  email        String @unique
-  hashPassword String
-
-  workspaces Workspace[]
+  id              String      @id @default(uuid())
+  username        String
+  email           String      @unique
+  hashPassword    String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now())
+  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  memberships     Member[]
+  invitesSent     Invite[]    @relation("InviteSender")
 }
 
 model Workspace {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  slug      String   @unique
+  slug      String    @unique
   ownerId   String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-
-  owner User @relation(fields: [ownerId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  owner     User      @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  projects  Project[]
+  members   Member[]
+  invites   Invite[]
+  pages     Page[]
 
   @@index([ownerId])
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  workspaceId String
+  name        String
+  slug        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pages       Page[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+}
+
+model Member {
+  id          String     @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        MemberRole @default(MEMBER)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model Invite {
+  id          String       @id @default(uuid())
+  workspaceId String
+  email       String
+  role        MemberRole   @default(MEMBER)
+  status      InviteStatus @default(PENDING)
+  invitedById String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User?     @relation("InviteSender", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
+  @@index([email])
+  @@index([invitedById])
+}
+
+model Page {
+  id          String    @id @default(uuid())
+  workspaceId String
+  projectId   String?
+  parentId    String?
+  title       String
+  slug        String?
+  icon        String?
+  cover       String?
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent      Page?     @relation("PageTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Page[]    @relation("PageTree")
+  blocks      Block[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([projectId])
+  @@index([parentId])
+}
+
+model Block {
+  id        String    @id @default(uuid())
+  pageId    String
+  type      BlockType
+  content   Json
+  position  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  page      Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([pageId, position])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum BlockType {
+  TEXT
+  HEADING
+  PARAGRAPH
+  TODO
+  BULLET
+  NUMBERED_LIST
+  CODE
+  QUOTE
+  DIVIDER
+  IMAGE
+  FILE
+  LINK
+  CALLOUT
 }

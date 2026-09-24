@@ -18,7 +18,7 @@ export default function Footer() {
                 VaultGraph
               </span>
             </span>
-            <p className="mt-3.5 max-w-[260px] text-[14.5px] leading-[1.6] text-muted">
+            <p className="mt-3.5 max-w-[260px] text-[14.5px] leading-[1.6] text-ink-soft">
               Built for people who think in connections.
             </p>
           </div>
@@ -31,7 +31,7 @@ export default function Footer() {
                 <a
                   key={l}
                   href={l === "GitHub" ? "https://github.com" : "#top"}
-                  className="w-fit py-[5px] text-[14.5px] text-muted transition-colors duration-200 hover:text-ink"
+                  className="w-fit py-[5px] text-[14.5px] text-ink-soft transition-colors duration-200 hover:text-ink"
                   {...(l === "GitHub"
                     ? { target: "_blank", rel: "noreferrer" }
                     : {})}

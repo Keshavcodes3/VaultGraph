@@ -91,9 +91,9 @@ const META: Record<string, Meta> = {
 const line = (a: GraphNode, b: GraphNode) => `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
 
 const NODE_BASE =
-  "cursor-pointer fill-white stroke-line stroke-[1.6px] outline-none transition-[opacity,stroke] duration-250 data-[center=true]:fill-ink data-[center=true]:stroke-ink data-[hot=true]:stroke-accent data-[hot=true]:stroke-[2.6px] data-[dim=true]:opacity-25";
+  "cursor-pointer fill-white stroke-line stroke-[1.6px] outline-none transition-[opacity,stroke] duration-250 data-[center=true]:fill-ink data-[center=true]:stroke-ink data-[hot=true]:stroke-brand data-[hot=true]:stroke-[2.6px] data-[dim=true]:opacity-25";
 const LABEL_BASE =
-  "font-sans text-sm font-medium fill-muted transition-[opacity,fill] duration-250 data-[center=true]:fill-ink data-[center=true]:text-base data-[center=true]:font-bold data-[hot=true]:fill-ink data-[hot=true]:font-bold data-[dim=true]:opacity-25";
+  "font-sans text-sm font-medium fill-ink-soft transition-[opacity,fill] duration-250 data-[center=true]:fill-ink data-[center=true]:text-base data-[center=true]:font-bold data-[hot=true]:fill-ink data-[hot=true]:font-bold data-[dim=true]:opacity-25";
 
 export default function GraphShowcase() {
   const calm = useCalm();
@@ -162,7 +162,7 @@ export default function GraphShowcase() {
           <div className="grid grid-cols-[1fr_300px] items-stretch gap-5 max-[960px]:grid-cols-1">
             <div className="relative min-h-[480px] overflow-hidden rounded-card border border-line bg-white shadow-card max-[960px]:min-h-[380px]">
               <div
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_300px_at_50%_0%,var(--color-accent-faint),transparent_70%)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_300px_at_50%_0%,var(--color-brand-faint),transparent_70%)]"
                 aria-hidden="true"
               />
               <div className="absolute top-3.5 right-3.5 z-[2] flex gap-1.5 rounded-full border border-line bg-white/92 p-[5px] shadow-mini">
@@ -170,14 +170,14 @@ export default function GraphShowcase() {
                   onClick={() => setZoom((z) => Math.max(0.7, +(z - 0.15).toFixed(2)))}
                   aria-label="Zoom out"
                   disabled={zoom <= 0.7}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-soft hover:text-ink disabled:cursor-default disabled:opacity-35"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors duration-200 hover:bg-soft hover:text-ink disabled:cursor-default disabled:opacity-35"
                 >
                   <Minus size={15} />
                 </button>
                 <button
                   onClick={() => setZoom(1)}
                   aria-label="Reset zoom"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-soft hover:text-ink"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors duration-200 hover:bg-soft hover:text-ink"
                 >
                   <RotateCcw size={14} />
                 </button>
@@ -185,7 +185,7 @@ export default function GraphShowcase() {
                   onClick={() => setZoom((z) => Math.min(1.5, +(z + 0.15).toFixed(2)))}
                   aria-label="Zoom in"
                   disabled={zoom >= 1.5}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-soft hover:text-ink disabled:cursor-default disabled:opacity-35"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors duration-200 hover:bg-soft hover:text-ink disabled:cursor-default disabled:opacity-35"
                 >
                   <Plus size={15} />
                 </button>
@@ -295,14 +295,14 @@ export default function GraphShowcase() {
               className="sticky top-[110px] flex flex-col gap-2.5 self-start rounded-card border border-line bg-white px-6 py-[26px] shadow-mini max-[960px]:static"
               aria-live="polite"
             >
-              <p className="font-mono text-[11.5px] font-semibold tracking-[0.14em] text-accent uppercase">
+              <p className="font-mono text-[11.5px] font-semibold tracking-[0.14em] text-brand uppercase">
                 {selectedMeta.kind}
               </p>
               <h3 className="text-[26px] leading-[1.15] font-semibold tracking-[-0.025em]">
                 {selectedNode.label}
               </h3>
-              <p className="text-[14.5px] leading-[1.6] text-muted">{selectedMeta.blurb}</p>
-              <p className="mt-1 flex items-baseline gap-[7px] text-[13.5px] text-muted">
+              <p className="text-[14.5px] leading-[1.6] text-ink-soft">{selectedMeta.blurb}</p>
+              <p className="mt-1 flex items-baseline gap-[7px] text-[13.5px] text-ink-soft">
                 <span className="text-[22px] font-bold tracking-[-0.02em] text-ink">
                   {linkCount}
                 </span>
@@ -310,7 +310,7 @@ export default function GraphShowcase() {
               </p>
               {expandable ? (
                 <button
-                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-[18px] py-3 text-sm font-semibold text-white transition-colors duration-250 hover:bg-accent"
+                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-[18px] py-3 text-sm font-semibold text-white transition-colors duration-250 hover:bg-brand"
                   onClick={() => setExpanded((xs) => [...xs, selected])}
                 >
                   <Plus size={15} strokeWidth={2.4} />
@@ -335,7 +335,7 @@ export default function GraphShowcase() {
                       return (
                         <button
                           key={id}
-                          className="rounded-full border border-line px-[13px] py-1.5 text-[13px] font-medium text-muted transition-all duration-200 hover:border-accent hover:bg-accent-faint hover:text-accent-deep"
+                          className="rounded-full border border-line px-[13px] py-1.5 text-[13px] font-medium text-ink-soft transition-all duration-200 hover:border-brand hover:bg-brand-faint hover:text-brand-deep"
                           onClick={() => pick(id)}
                         >
                           {nodeById(nodes, id).label}

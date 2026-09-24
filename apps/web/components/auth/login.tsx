@@ -92,7 +92,7 @@ export default function LoginForm() {
         <h1 className="mt-8 text-center text-[clamp(30px,5vw,36px)] leading-[1.1] font-semibold tracking-[-0.03em]">
           Welcome back.
         </h1>
-        <p className="mt-2.5 text-center text-[15.5px] leading-relaxed text-muted">
+        <p className="mt-2.5 text-center text-[15.5px] leading-relaxed text-ink-soft">
           Your workspace is waiting.
         </p>
 
@@ -145,7 +145,7 @@ export default function LoginForm() {
             <div className="mt-3 flex justify-end">
               <a
                 href="/forgot-password"
-                className="text-[13.5px] font-medium text-muted transition-colors duration-200 hover:text-ink"
+                className="text-[13.5px] font-medium text-ink-soft transition-colors duration-200 hover:text-ink"
               >
                 Forgot password?
               </a>
@@ -169,7 +169,7 @@ export default function LoginForm() {
           )}
         </form>
 
-        <p className="mt-8 text-center text-[14px] text-muted">
+        <p className="mt-8 text-center text-[14px] text-ink-soft">
           Don&apos;t have an account?{" "}
           <a
             href="/register"

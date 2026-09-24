@@ -108,7 +108,7 @@ export default function Capabilities() {
         <div className="grid grid-cols-[1fr_380px] items-center gap-6 max-[960px]:grid-cols-1">
           <Reveal className="relative rounded-card border border-line bg-white p-5 shadow-card">
             <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(420px_240px_at_50%_0%,var(--color-accent-faint),transparent_70%)]"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(420px_240px_at_50%_0%,var(--color-brand-faint),transparent_70%)]"
               aria-hidden="true"
             />
             <svg
@@ -145,7 +145,7 @@ export default function Capabilities() {
                 <text x={HUB.x} y={HUB.y + 1} textAnchor="middle" dominantBaseline="central" className="fill-white font-sans text-[20px] font-bold">
                   V
                 </text>
-                <text x={HUB.x} y={HUB.y + 44} textAnchor="middle" className="fill-muted font-sans text-[13px] font-semibold">
+                <text x={HUB.x} y={HUB.y + 44} textAnchor="middle" className="fill-ink-soft font-sans text-[13px] font-semibold">
                   VaultGraph
                 </text>
               </g>
@@ -192,7 +192,7 @@ export default function Capabilities() {
                       x={c.x}
                       y={c.y + 42}
                       textAnchor="middle"
-                      className="font-sans text-[14.5px] font-medium fill-muted transition-[opacity,fill] duration-300 data-[active=true]:fill-ink data-[active=true]:font-bold data-[dim=true]:opacity-30"
+                      className="font-sans text-[14.5px] font-medium fill-ink-soft transition-[opacity,fill] duration-300 data-[active=true]:fill-ink data-[active=true]:font-bold data-[dim=true]:opacity-30"
                       data-active={isActive}
                       data-dim={dimmed}
                       pointerEvents="none"
@@ -221,13 +221,13 @@ export default function Capabilities() {
                 >
                   <Icon size={22} strokeWidth={2} />
                 </span>
-                <p className="font-mono text-[11.5px] font-semibold tracking-[0.14em] text-accent uppercase">
+                <p className="font-mono text-[11.5px] font-semibold tracking-[0.14em] text-brand uppercase">
                   {item.kind}
                 </p>
                 <h3 className="mt-1.5 text-[30px] font-semibold tracking-[-0.03em]">
                   {item.label}
                 </h3>
-                <p className="mt-2.5 text-[15.5px] leading-[1.65] text-muted">
+                <p className="mt-2.5 text-[15.5px] leading-[1.65] text-ink-soft">
                   {item.desc}
                 </p>
                 <p className="mt-[22px] text-xs font-bold tracking-[0.08em] text-faint uppercase">
@@ -240,7 +240,7 @@ export default function Capabilities() {
                     return (
                       <button
                         key={id}
-                        className="inline-flex items-center gap-2 rounded-full border border-line px-[15px] py-2 text-[13.5px] font-semibold text-muted transition-all duration-200 hover:border-ink hover:text-ink"
+                        className="inline-flex items-center gap-2 rounded-full border border-line px-[15px] py-2 text-[13.5px] font-semibold text-ink-soft transition-all duration-200 hover:border-ink hover:text-ink"
                         onClick={() => touch(id)}
                         onMouseEnter={() => touch(id)}
                       >

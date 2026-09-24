@@ -87,8 +87,8 @@ function StoryVisual({ stage, calm }: { stage: number; calm: boolean }) {
           ].map((n) => (
             <g key={n.l}>
               <circle cx={n.x} cy={n.y} r="20" className="fill-white stroke-line stroke-[1.5px]" />
-              <circle cx={n.x} cy={n.y} r="5" className="fill-accent" />
-              <text x={n.x} y={n.y + 36} textAnchor="middle" className="fill-muted font-sans text-[13px] font-medium">
+              <circle cx={n.x} cy={n.y} r="5" className="fill-brand" />
+              <text x={n.x} y={n.y + 36} textAnchor="middle" className="fill-ink-soft font-sans text-[13px] font-medium">
                 {n.l}
               </text>
             </g>
@@ -120,7 +120,7 @@ function StoryVisual({ stage, calm }: { stage: number; calm: boolean }) {
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 19 }}
           >
-            <rect x="300" y="220" width="150" height="120" rx="16" className="fill-accent-faint stroke-accent/40 stroke-[1.5px] [filter:drop-shadow(0_10px_24px_rgba(79,70,229,0.16))]" />
+            <rect x="300" y="220" width="150" height="120" rx="16" className="fill-brand-faint stroke-brand/40 stroke-[1.5px] [filter:drop-shadow(0_10px_24px_rgba(79,70,229,0.16))]" />
             <rect x="320" y="242" width="76" height="11" rx="5.5" className="fill-ink" />
             <rect x="320" y="262" width="104" height="7" rx="3.5" className="fill-[#dcdce4]" />
             <rect x="320" y="276" width="88" height="7" rx="3.5" className="fill-[#dcdce4]" />
@@ -132,7 +132,7 @@ function StoryVisual({ stage, calm }: { stage: number; calm: boolean }) {
         {showSecond && (
           <motion.path
             d="M 300 200 C 320 210, 300 235, 315 245"
-            className="fill-none stroke-accent stroke-[2.2px]"
+            className="fill-none stroke-brand stroke-[2.2px]"
             initial={calm ? false : { pathLength: 0 }}
             animate={{ pathLength: 1 }}
             transition={{ duration: 0.7, delay: 0.25 }}
@@ -143,7 +143,7 @@ function StoryVisual({ stage, calm }: { stage: number; calm: boolean }) {
             cx="308"
             cy="222"
             r="7"
-            className="fill-accent stroke-white stroke-[2.5px] tbox"
+            className="fill-brand stroke-white stroke-[2.5px] tbox"
             initial={calm ? false : { scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.8, type: "spring", stiffness: 400, damping: 16 }}
@@ -176,7 +176,7 @@ export default function ScrollStory() {
         <div className="grid grid-cols-[1.05fr_0.95fr] items-start gap-[72px] max-[900px]:grid-cols-1 max-[900px]:gap-7">
           <div className="relative">
             <div className="sticky top-[110px] rounded-card border border-line bg-white px-7 pt-7 pb-5 shadow-card max-[900px]:top-[84px] max-[900px]:p-4 max-[900px]:pb-3">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(480px_260px_at_50%_0%,var(--color-accent-faint),transparent_70%)]" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(480px_260px_at_50%_0%,var(--color-brand-faint),transparent_70%)]" aria-hidden="true" />
               <div className="relative">
                 <StoryVisual stage={stage} calm={calm} />
               </div>
@@ -187,7 +187,7 @@ export default function ScrollStory() {
                     className={`h-[34px] w-[34px] rounded-full border text-[13px] font-bold transition-all duration-250 ${
                       i === stage
                         ? "border-ink bg-ink text-white"
-                        : "border-line bg-white text-muted"
+                        : "border-line bg-white text-ink-soft"
                     }`}
                     data-active={i === stage}
                     onClick={() => {
@@ -220,18 +220,18 @@ export default function ScrollStory() {
                 whileInView={{ y: 0 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               >
-                <span className="font-mono text-xs font-semibold tracking-[0.16em] text-accent uppercase">
+                <span className="font-mono text-xs font-semibold tracking-[0.16em] text-brand uppercase">
                   {s.step}
                 </span>
                 <h3 className="mt-2.5 text-[clamp(30px,3.4vw,42px)] leading-[1.1] font-semibold tracking-[-0.03em]">
                   {s.title}
                 </h3>
-                <p className="mt-3 max-w-[420px] text-[17px] leading-[1.65] text-muted">
+                <p className="mt-3 max-w-[420px] text-[17px] leading-[1.65] text-ink-soft">
                   {s.body}
                 </p>
                 <span className="mt-5 block h-0.5 w-[120px] overflow-hidden rounded-sm bg-line" aria-hidden="true">
                   <motion.span
-                    className="block h-full w-full origin-left bg-accent"
+                    className="block h-full w-full origin-left bg-brand"
                     initial={false}
                     animate={{ scaleX: i === stage ? 1 : i < stage ? 1 : 0 }}
                     transition={{ duration: i === stage ? 2.4 : 0.3, ease: "easeOut" }}

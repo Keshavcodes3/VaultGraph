@@ -83,7 +83,7 @@ export default function FloatingKnowledge() {
           onMouseLeave={calm ? undefined : () => { mx.set(0); my.set(0); }}
         >
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_280px_at_50%_110%,var(--color-accent-faint),transparent_70%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(560px_280px_at_50%_110%,var(--color-brand-faint),transparent_70%)]"
             aria-hidden="true"
           />
           {!calm && (

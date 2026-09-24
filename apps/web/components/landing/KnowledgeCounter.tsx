@@ -150,7 +150,7 @@ export default function KnowledgeCounter() {
                 cx={n.x}
                 cy={n.y}
                 r={n.r}
-                className="fill-white stroke-accent stroke-[1.4px] stroke-opacity-55 tbox"
+                className="fill-white stroke-brand stroke-[1.4px] stroke-opacity-55 tbox"
                 initial={calm ? false : { opacity: 0, scale: 0 }}
                 animate={graphActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
                 transition={{ duration: 0.5 }}
@@ -181,7 +181,7 @@ export default function KnowledgeCounter() {
                     transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                   >
                     We found{" "}
-                    <motion.span className="font-bold text-accent tabular-nums">{n2Text}</motion.span>{" "}
+                    <motion.span className="font-bold text-brand tabular-nums">{n2Text}</motion.span>{" "}
                     connections.
                   </motion.p>
                 )}
@@ -193,7 +193,7 @@ export default function KnowledgeCounter() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               >
-                Think in <em className="font-serif font-medium text-accent-deep italic">connections.</em>
+                Think in <em className="font-serif font-medium text-brand-deep italic">connections.</em>
               </motion.p>
             )}
           </div>

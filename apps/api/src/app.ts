@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { authRouter } from "./Modules/auth/Routes/auth.routes";
+import projectRouter from "./Modules/Projects/Routes/project.routes";
 import workspaceRouter from "./Modules/Workspace/Routes/workspace.routes"
 import { apiSuccess } from "./Shared/apiResponse";
 import { errorHandler, notFoundHandler } from "./Shared/errorMiddleware";
@@ -23,6 +24,7 @@ export const createApp = () => {
 
   app.use("/api/auth", authRouter);
   app.use('/api/workspaces',workspaceRouter)
+  app.use("/api/projects", projectRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 

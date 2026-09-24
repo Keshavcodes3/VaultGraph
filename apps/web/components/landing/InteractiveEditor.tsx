@@ -213,7 +213,7 @@ export default function InteractiveEditor() {
               <button
                 type="button"
                 onClick={() => setShowCommand(true)}
-                className="hidden items-center gap-2 rounded-md border border-mist bg-white px-2.5 py-1.5 text-[11px] text-muted transition-colors hover:text-ink sm:flex"
+                className="hidden items-center gap-2 rounded-md border border-mist bg-white px-2.5 py-1.5 text-[11px] text-ink-soft transition-colors hover:text-ink sm:flex"
               >
                 <Search size={12} />
 
@@ -271,7 +271,7 @@ export default function InteractiveEditor() {
                 <button
                   type="button"
                   onClick={() => setShowCommand(true)}
-                  className="mb-4 flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12px] text-muted transition-colors hover:bg-white hover:text-ink"
+                  className="mb-4 flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[12px] text-ink-soft transition-colors hover:bg-white hover:text-ink"
                 >
                   <Search size={14} />
                   Search
@@ -383,7 +383,7 @@ export default function InteractiveEditor() {
                 <div className="mt-8 border-t border-mist pt-3">
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-[11px] font-medium text-muted transition-colors hover:bg-white hover:text-ink"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-[11px] font-medium text-ink-soft transition-colors hover:bg-white hover:text-ink"
                   >
                     <Plus size={13} />
                     New page
@@ -392,7 +392,7 @@ export default function InteractiveEditor() {
                   <div className="mt-3 flex items-center gap-2 px-2 text-[10px] text-faint">
                     <span className="relative h-4 w-5">
                       <span className="absolute left-0 top-1 h-1.5 w-1.5 rounded-full bg-ink" />
-                      <span className="absolute left-2.5 top-0 h-1.5 w-1.5 rounded-full bg-accent" />
+                      <span className="absolute left-2.5 top-0 h-1.5 w-1.5 rounded-full bg-brand" />
                       <span className="absolute right-0 top-2 h-1.5 w-1.5 rounded-full bg-[#c8c8d0]" />
                     </span>
 
@@ -490,7 +490,7 @@ export default function InteractiveEditor() {
                       {getPageTitle(activePage)}
                     </h3>
 
-                    <p className="mt-4 max-w-[580px] text-[16px] leading-7 text-muted">
+                    <p className="mt-4 max-w-[580px] text-[16px] leading-7 text-ink-soft">
                       {getPageDescription(activePage)}
                     </p>
 
@@ -518,7 +518,7 @@ export default function InteractiveEditor() {
                           do.
                         </p>
 
-                        <p className="mt-3 text-muted">
+                        <p className="mt-3 text-ink-soft">
                           This page connects to{" "}
                           <InlineLink
                             label="JWT"
@@ -558,7 +558,7 @@ export default function InteractiveEditor() {
                         <motion.button
                           type="button"
                           onClick={() => setShowAI(true)}
-                          className="absolute -right-2 -top-4 flex items-center gap-1.5 rounded-md border border-mist bg-white px-2.5 py-1.5 text-[10px] font-semibold text-muted opacity-0 shadow-sm transition-opacity group-hover/ai:opacity-100 hover:text-ink"
+                          className="absolute -right-2 -top-4 flex items-center gap-1.5 rounded-md border border-mist bg-white px-2.5 py-1.5 text-[10px] font-semibold text-ink-soft opacity-0 shadow-sm transition-opacity group-hover/ai:opacity-100 hover:text-ink"
                           whileHover={
                             calm
                               ? undefined
@@ -569,7 +569,7 @@ export default function InteractiveEditor() {
                         >
                           <Sparkles
                             size={12}
-                            className="text-accent"
+                            className="text-brand"
                           />
                           Ask AI
                         </motion.button>
@@ -616,11 +616,11 @@ const token = createToken(user);`}
                                 {row.project}
                               </span>
 
-                              <span className="text-muted">
+                              <span className="text-ink-soft">
                                 {row.status}
                               </span>
 
-                              <span className="text-muted">
+                              <span className="text-ink-soft">
                                 {row.pages}
                               </span>
                             </div>
@@ -677,7 +677,7 @@ const token = createToken(user);`}
                               onClick={() =>
                                 setSelectedLink(link)
                               }
-                              className="flex items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[11px] text-muted"
+                              className="flex items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[11px] text-ink-soft"
                               whileHover={
                                 calm
                                   ? undefined
@@ -774,7 +774,7 @@ function SidebarItem({
       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] ${
         active
           ? "bg-white font-semibold text-ink shadow-sm"
-          : "text-muted hover:bg-white hover:text-ink"
+          : "text-ink-soft hover:bg-white hover:text-ink"
       }`}
     >
       <Icon size={13} />
@@ -801,7 +801,7 @@ function SidebarPage({
       className={`relative flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] transition-colors ${
         active
           ? "font-semibold text-ink"
-          : "font-medium text-muted hover:text-ink"
+          : "font-medium text-ink-soft hover:text-ink"
       }`}
       whileHover={{ x: 2 }}
       transition={{
@@ -854,7 +854,7 @@ function EditorSection({
         {title}
       </div>
 
-      <div className="text-muted">{children}</div>
+      <div className="text-ink-soft">{children}</div>
     </section>
   );
 }
@@ -870,7 +870,7 @@ function InlineLink({
     <motion.button
       type="button"
       onClick={onClick}
-      className="relative inline-flex items-center rounded-[4px] bg-[#f3f3f5] px-1.5 text-ink transition-colors hover:bg-accent-soft"
+      className="relative inline-flex items-center rounded-[4px] bg-[#f3f3f5] px-1.5 text-ink transition-colors hover:bg-brand-soft"
       whileHover={{
         y: -1,
       }}
@@ -939,7 +939,7 @@ function SlashMenu({
             key={item.label}
             type="button"
             onClick={onClose}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[11px] text-muted transition-colors hover:bg-[#f7f7f8] hover:text-ink"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[11px] text-ink-soft transition-colors hover:bg-[#f7f7f8] hover:text-ink"
           >
             <Icon size={14} />
             {item.label}
@@ -995,7 +995,7 @@ function AIPopover({
         </button>
       </div>
 
-      <div className="rounded-lg bg-[#f7f7f8] p-2.5 text-[11px] leading-5 text-muted">
+      <div className="rounded-lg bg-[#f7f7f8] p-2.5 text-[11px] leading-5 text-ink-soft">
         Explain this section in simpler terms...
       </div>
 
@@ -1004,7 +1004,7 @@ function AIPopover({
 
         <WandSparkles
           size={12}
-          className="text-accent"
+          className="text-brand"
         />
       </div>
     </motion.div>
@@ -1120,7 +1120,7 @@ function GraphNode({
       className={`z-10 rounded-md border bg-white px-2.5 py-1.5 text-[9px] font-medium shadow-sm ${
         center
           ? "border-ink bg-ink text-white"
-          : "border-line text-muted"
+          : "border-line text-ink-soft"
       } ${className}`}
       animate={{
         y: [0, -2, 0],
@@ -1191,7 +1191,7 @@ function LinkPreview({
         </button>
       </div>
 
-      <p className="mt-3 text-[10px] leading-5 text-muted">
+      <p className="mt-3 text-[10px] leading-5 text-ink-soft">
         This page is part of your connected knowledge
         graph.
       </p>

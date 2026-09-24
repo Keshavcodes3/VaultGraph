@@ -177,7 +177,7 @@ export default function RegisterForm() {
         aria-label={
           showPassword ? "Hide password" : "Show password"
         }
-        className="rounded-full p-2 text-stone-700 transition-colors duration-300 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20"
+        className="rounded-full p-2 text-stone-700 transition-colors duration-300 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
       >
         {showPassword ? (
           <EyeOff size={16} className="opacity-85" />

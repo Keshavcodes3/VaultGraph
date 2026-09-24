@@ -107,7 +107,7 @@ export default function Navbar() {
             <a
               key={l.label}
               href={l.href}
-              className="rounded-pill px-[13px] py-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-soft hover:text-ink"
+              className="rounded-pill px-[13px] py-2 text-sm font-medium text-ink-soft transition-colors duration-200 hover:bg-soft hover:text-ink"
               {...(l.href.startsWith("http")
                 ? { target: "_blank", rel: "noreferrer" }
                 : {})}
@@ -121,7 +121,7 @@ export default function Navbar() {
           <Magnetic>
             <a
               href="#cta"
-              className="group inline-flex items-center gap-[7px] rounded-pill bg-ink px-[18px] py-2.5 text-[13.5px] font-semibold tracking-[-0.01em] whitespace-nowrap text-white transition-colors duration-250 hover:bg-accent max-md:hidden"
+              className="group inline-flex items-center gap-[7px] rounded-pill bg-ink px-[18px] py-2.5 text-[13.5px] font-semibold tracking-[-0.01em] whitespace-nowrap text-white transition-colors duration-250 hover:bg-brand max-md:hidden"
             >
               Start building
               <ArrowRight

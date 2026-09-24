@@ -23,12 +23,12 @@ export default function Hero() {
       <div className="mx-auto w-full max-w-[1140px] px-6">
         <div className="mx-auto max-w-[860px]">
           <motion.p
-            className="inline-flex items-center gap-2.5 rounded-pill border border-line bg-white px-[18px] py-2 font-mono text-xs font-semibold tracking-[0.2em] text-muted uppercase shadow-mini"
+            className="inline-flex items-center gap-2.5 rounded-pill border border-line bg-white px-[18px] py-2 font-mono text-xs font-semibold tracking-[0.2em] text-ink-soft uppercase shadow-mini"
             initial={calm ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="h-[7px] w-[7px] rounded-full bg-accent animate-pulse-dot" />
+            <span className="h-[7px] w-[7px] rounded-full bg-brand animate-pulse-dot" />
             The knowledge workspace
           </motion.p>
 
@@ -49,14 +49,14 @@ export default function Hero() {
               animate="show"
               className="block"
             >
-              <em className="bg-[linear-gradient(100deg,var(--color-ink)_30%,var(--color-accent-deep)_75%)] bg-clip-text font-serif font-medium tracking-[-0.02em] text-transparent italic">
+              <em className="bg-[linear-gradient(100deg,var(--color-ink)_30%,var(--color-brand-deep)_75%)] bg-clip-text font-serif font-medium tracking-[-0.02em] text-transparent italic">
                 beautifully connected.
               </em>
             </motion.span>
           </h1>
 
           <motion.p
-            className="mx-auto mt-[26px] max-w-[560px] text-[clamp(17px,2.2vw,20px)] leading-[1.65] text-muted text-pretty"
+            className="mx-auto mt-[26px] max-w-[560px] text-[clamp(17px,2.2vw,20px)] leading-[1.65] text-ink-soft text-pretty"
             initial={calm ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -73,7 +73,7 @@ export default function Hero() {
             <Magnetic>
               <a
                 href="#cta"
-                className="group inline-flex items-center gap-2.5 rounded-pill bg-ink px-7 py-[15px] text-[15.5px] font-semibold tracking-[-0.01em] text-white shadow-card transition-all duration-250 hover:bg-accent hover:shadow-[0_12px_32px_-12px_rgba(79,70,229,0.55)]"
+                className="group inline-flex items-center gap-2.5 rounded-pill bg-ink px-7 py-[15px] text-[15.5px] font-semibold tracking-[-0.01em] text-white shadow-card transition-all duration-250 hover:bg-brand hover:shadow-[0_12px_32px_-12px_rgba(79,70,229,0.55)]"
               >
                 Start building
                 <ArrowRight size={16} strokeWidth={2.2} className="transition-transform duration-250 group-hover:translate-x-1" />

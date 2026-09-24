@@ -6,6 +6,11 @@ import {
   WorkspaceNotFoundError,
   WorkspaceSlugAlreadyExistsError,
 } from "../Modules/Workspace/utils/workspace.errors";
+import {
+  ProjectAccessDeniedError,
+  ProjectNotFoundError,
+  ProjectSlugAlreadyExistsError,
+} from "../Modules/Projects/utils/project.errors";
 
 const isUniqueViolation = (err: unknown) => {
   const e = err as { code?: string; sqlState?: string; constraint?: string };
@@ -33,6 +38,18 @@ export const errorHandler = (
   }
 
   if (err instanceof WorkspaceSlugAlreadyExistsError) {
+    return apiError(res, err.message, 409);
+  }
+
+  if (err instanceof ProjectNotFoundError) {
+    return apiError(res, err.message, 404);
+  }
+
+  if (err instanceof ProjectAccessDeniedError) {
+    return apiError(res, err.message, 403);
+  }
+
+  if (err instanceof ProjectSlugAlreadyExistsError) {
     return apiError(res, err.message, 409);
   }
 

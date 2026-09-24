@@ -43,7 +43,7 @@ export default function AuthField({
     <div className="group w-full">
       <label
         htmlFor={id}
-        className="block text-[13px] font-medium tracking-[-0.005em] text-muted transition-colors duration-200 group-focus-within:text-ink"
+        className="block text-[13px] font-medium tracking-[-0.005em] text-ink-soft transition-colors duration-200 group-focus-within:text-ink"
       >
         {label}
       </label>

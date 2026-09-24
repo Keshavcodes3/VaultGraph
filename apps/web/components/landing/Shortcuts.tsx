@@ -59,7 +59,7 @@ export default function Shortcuts() {
               key={s.id}
               className={`flex flex-col gap-2 rounded-box border bg-white px-[22px] py-[26px] transition-all duration-250 hover:shadow-card ${
                 flash === s.id
-                  ? "border-accent bg-accent-faint shadow-[0_0_0_4px_var(--color-accent-soft),var(--shadow-card)]"
+                  ? "border-brand bg-brand-faint shadow-[0_0_0_4px_var(--color-brand-soft),var(--shadow-card)]"
                   : "border-line hover:border-[#d5d5de]"
               }`}
               data-flash={flash === s.id}
@@ -77,7 +77,7 @@ export default function Shortcuts() {
               <span className="text-[16.5px] font-semibold tracking-[-0.02em]">
                 {s.action}
               </span>
-              <span className="text-[13.5px] leading-[1.55] text-muted">{s.desc}</span>
+              <span className="text-[13.5px] leading-[1.55] text-ink-soft">{s.desc}</span>
             </motion.div>
           ))}
         </div>

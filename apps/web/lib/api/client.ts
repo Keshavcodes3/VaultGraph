@@ -64,8 +64,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   get: <T>(path: string) => request<T>(path, { method: "GET" }),
-  post: <T>(path: string, body: Record<string, string>) =>
+  // `undefined` values are dropped by JSON.stringify, so optional
+  // fields can be passed straight through.
+  post: <T>(path: string, body: Record<string, string | undefined>) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  patch: <T>(path: string, body: Record<string, string | undefined>) =>
+    request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
+  remove: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
 /** Mirror of the API's public user shape (dates arrive as ISO strings). */
