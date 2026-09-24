@@ -3,6 +3,8 @@ import express from "express";
 import { authRouter } from "./Modules/auth/Routes/auth.routes";
 import projectRouter from "./Modules/Projects/Routes/project.routes";
 import workspaceRouter from "./Modules/Workspace/Routes/workspace.routes"
+import pageRouter from "./Modules/Pages/Routes/page.routes";
+import blockRouter from "./Modules/Pages/Routes/block.routes";
 import { apiSuccess } from "./Shared/apiResponse";
 import { errorHandler, notFoundHandler } from "./Shared/errorMiddleware";
 import cookie from 'cookie-parser'
@@ -25,6 +27,12 @@ export const createApp = () => {
   app.use("/api/auth", authRouter);
   app.use('/api/workspaces',workspaceRouter)
   app.use("/api/projects", projectRouter);
+  // Page + Block system (versioned as specified; unversioned aliases preserved
+  // for existing clients).
+  app.use("/api/v1/pages", pageRouter);
+  app.use("/api/pages", pageRouter);
+  app.use("/api/v1/blocks", blockRouter);
+  app.use("/api/blocks", blockRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 

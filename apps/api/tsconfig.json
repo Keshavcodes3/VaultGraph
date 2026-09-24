@@ -36,6 +36,7 @@
       "@repo/shared/workspace-types": ["../../packages/shared/types/workspace/workspace.types.ts"],
       "@repo/shared/project-types": ["../../packages/shared/types/Project/project.types.ts"],
       "@vaultgraph/shared/project-types": ["../../packages/shared/types/project/project.types.ts"],
+      "@vaultgraph/shared/pages-types":["../../packages/shared/types/Pages/pages.types.ts"],
       "@repo/ui": ["../../packages/ui/src/index.ts"],
       "@vaultgraph/shared": ["../../packages/shared/src/index.ts"],
       "@vaultgraph/shared/auth-types": ["../../packages/shared/types/Auth/auth.types.ts"],
