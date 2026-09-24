@@ -766,7 +766,7 @@ export default function WorkspaceShell() {
           ) : null}
 
           <div className="flex min-h-0 flex-1">
-            <main className="min-w-0 flex-1 overflow-y-auto bg-white dark:bg-[#111111]">
+            <main className="min-w-0 flex-1 overflow-x-clip overflow-y-auto bg-white dark:bg-[#111111]">
               {trashOpen ? (
                 <TrashView
                   trash={trash}
@@ -780,6 +780,7 @@ export default function WorkspaceShell() {
                   pageId={activeId}
                   propsOpen={propsOpen}
                   onToggleProps={() => setPropsOpen((v) => !v)}
+                  onOpenSidebar={() => setMobileNav(true)}
                 />
               ) : (
                 <EmptyPage

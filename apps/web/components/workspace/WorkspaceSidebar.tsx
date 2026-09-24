@@ -176,7 +176,7 @@ function ProjectRow({
         onClick={onDelete}
         aria-label={`Delete ${project.name || "Untitled"}`}
         title={`Delete ${project.name || "Untitled"}`}
-        className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-rosy focus-visible:opacity-100"
+        className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-rosy focus-visible:opacity-100 max-md:opacity-100"
       >
         <X size={13} />
       </button>

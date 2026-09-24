@@ -94,7 +94,7 @@ export function TrashView({
               </span>
               <span className="block text-[12px] text-faint">Deleted {t.deletedAt}</span>
             </span>
-            <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100">
               <button
                 onClick={() => onRestore(t.page.id)}
                 className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium text-ink-soft transition-colors hover:bg-white hover:text-ink dark:text-[#A1A1AA] dark:hover:bg-white/10 dark:hover:text-white"

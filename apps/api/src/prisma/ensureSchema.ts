@@ -5,14 +5,16 @@ import contractJson from "./contract.json" with { type: "json" };
 /**
  * Dev schema bootstrap. On boot the API verifies the live PostgreSQL schema
  * against the emitted Prisma 8 contract (`contract.json`, the exact physical
- * schema the runtime queries). If any expected table/column is missing (e.g.
- * a stale sample schema from an old migration), it applies
- * `migrations/vaultgraph-schema-fix.sql` (drop stale tables + recreate),
- * then the server starts against a matching schema.
+ * schema the runtime queries).
  *
  * - Healthy databases: a single information_schema probe, no writes.
- * - Broken/empty databases: rebuilt once; legacy rows in stale tables are
- *   dev-only test data (the app cannot read them anyway — every query 500s).
+ * - Databases missing columns (e.g. an older schema without the invitation
+ *   token columns): the non-destructive upgrade in
+ *   `migrations/vaultgraph-invitation-upgrade.sql` is applied first
+ *   (idempotent ALTERs, rows preserved), then the schema is re-probed.
+ * - Empty/broken databases (missing tables entirely): rebuilt once via
+ *   `migrations/vaultgraph-schema-fix.sql`, then the server starts against
+ *   a matching schema.
  * - Production should manage schema with real migrations; set
  *   SKIP_SCHEMA_BOOTSTRAP=1 to skip this check entirely.
  */
@@ -34,6 +36,28 @@ function expectedColumns(): Map<string, Set<string>> {
   return out;
 }
 
+async function findMissingColumns(client: Client): Promise<string[]> {
+  const actual = await client.query<{ table_name: string; column_name: string }>(
+    `SELECT table_name, column_name FROM information_schema.columns
+     WHERE table_schema = 'public'`
+  );
+  const actualByTable = new Map<string, Set<string>>();
+  for (const row of actual.rows) {
+    const cols = actualByTable.get(row.table_name) ?? new Set<string>();
+    cols.add(row.column_name);
+    actualByTable.set(row.table_name, cols);
+  }
+
+  const missing: string[] = [];
+  for (const [table, cols] of expectedColumns()) {
+    const have = actualByTable.get(table) ?? new Set<string>();
+    for (const col of cols) {
+      if (!have.has(col)) missing.push(`${table}.${col}`);
+    }
+  }
+  return missing;
+}
+
 export async function ensureSchema(): Promise<void> {
   if (process.env["SKIP_SCHEMA_BOOTSTRAP"] === "1") return;
   const url = process.env["DATABASE_URL"];
@@ -43,27 +67,30 @@ export async function ensureSchema(): Promise<void> {
   try {
     await client.connect();
 
-    const actual = await client.query<{ table_name: string; column_name: string }>(
-      `SELECT table_name, column_name FROM information_schema.columns
-       WHERE table_schema = 'public'`
-    );
-    const actualByTable = new Map<string, Set<string>>();
-    for (const row of actual.rows) {
-      const cols = actualByTable.get(row.table_name) ?? new Set<string>();
-      cols.add(row.column_name);
-      actualByTable.set(row.table_name, cols);
-    }
-
-    const missing: string[] = [];
-    for (const [table, cols] of expectedColumns()) {
-      const have = actualByTable.get(table) ?? new Set<string>();
-      for (const col of cols) {
-        if (!have.has(col)) missing.push(`${table}.${col}`);
-      }
-    }
+    let missing = await findMissingColumns(client);
 
     if (missing.length === 0) {
       console.log("Database schema matches the Prisma contract.");
+      return;
+    }
+
+    // Non-destructive upgrade first: preserves rows (e.g. adds the
+    // invitation token columns to an existing database).
+    try {
+      const upgradeSql = await readFile(
+        new URL("../../migrations/vaultgraph-invitation-upgrade.sql", import.meta.url),
+        "utf8"
+      );
+      await client.query(upgradeSql);
+      missing = await findMissingColumns(client);
+    } catch (upgradeError) {
+      const message =
+        upgradeError instanceof Error ? upgradeError.message : String(upgradeError);
+      console.warn(`Non-destructive schema upgrade failed (${message}).`);
+    }
+
+    if (missing.length === 0) {
+      console.log("Database schema upgraded to match the Prisma contract.");
       return;
     }
 

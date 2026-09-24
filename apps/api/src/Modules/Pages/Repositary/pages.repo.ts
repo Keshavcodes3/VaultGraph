@@ -8,26 +8,6 @@ import type {
   UpdatePageInput,
 } from "@vaultgraph/shared/pages-types";
 
-/**
- * Page repository — Prisma 8 query API only.
- *
- * Follows the existing VaultGraph repository conventions:
- * Route -> Controller -> Service -> Repository -> Prisma 8 -> PostgreSQL.
- *
- * Notes on Prisma 8:
- * - Uses `db.orm.public.Page` with `.create()`, `.first()`,
- *   `.where().all()`, `.where().update()`, `.where().delete()`.
- * - No legacy `@prisma/client` / `PrismaClient` / nested writes are used.
- *   Hierarchy operations (move/duplicate/reorder) validate first, then issue
- *   sequential flat writes. Child pages + blocks cascade at the database
- *   level (onDelete: Cascade in contract.prisma).
- * - `timestamptz` columns require `Temporal.Instant` via `nowInstant()`.
- * - New contract columns (description, position, isFavorite, isArchived,
- *   isPublic, createdBy) are written with `as any` casts so this file stays
- *   type-compatible until `prisma contract emit` regenerates
- *   contract.json / contract.d.ts (requires a CLI run, intentionally not
- *   executed here).
- */
 
 export type PageRow = Awaited<
   ReturnType<typeof db.orm.public.Page.first>

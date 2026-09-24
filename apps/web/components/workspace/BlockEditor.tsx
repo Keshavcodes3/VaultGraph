@@ -878,7 +878,7 @@ function BlockChrome({
         wide ? "lg:-mx-16" : ""
       } ${selected ? "bg-soft dark:bg-white/5" : ""}`}
     >
-      <div className="absolute top-[6px] left-0 flex items-center opacity-0 transition-opacity duration-120 group-hover/block:opacity-100 focus-within:opacity-100">
+      <div className="absolute top-[6px] left-0 flex items-center opacity-0 transition-opacity duration-120 group-hover/block:opacity-100 focus-within:opacity-100 max-md:opacity-100">
         <button
           draggable
           onDragStart={onDragStart}

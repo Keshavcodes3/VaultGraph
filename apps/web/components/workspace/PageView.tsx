@@ -50,10 +50,12 @@ export default function PageView({
   pageId,
   propsOpen = false,
   onToggleProps,
+  onOpenSidebar,
 }: {
   pageId: string;
   propsOpen?: boolean;
   onToggleProps?: () => void;
+  onOpenSidebar?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -292,7 +294,7 @@ export default function PageView({
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-col">
+    <div className="flex min-h-[60vh] flex-col overflow-x-clip">
       <PageHeader
         crumbs={crumbs}
         isFavorite={data.page.isFavorite}
@@ -304,7 +306,7 @@ export default function PageView({
         onToggleFav={toggleFav}
         onCopyLink={copyLink}
         onToggleProps={onToggleProps ?? (() => {})}
-        onOpenSidebar={() => router.push("/workspace")}
+        onOpenSidebar={onOpenSidebar ?? (() => router.push("/workspace"))}
       />
       {saveError ? (
         <div className="mx-auto mt-3 flex w-full max-w-[850px] items-center justify-between gap-3 rounded-lg border border-rosy/30 bg-rosy/10 px-3 py-2 text-[13px] text-ink sm:mx-auto sm:px-12 dark:text-white">

@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'85f9c383507b4742e2b2c944e28c4b7d15832e61f3a0543406506a5980cebae2'>;
+  StorageHashBase<'b2a647ed290f8a01140f9cfd3c367cab17f2ce9ff9561ee9f02da25ecdf4073d'>;
 export type ExecutionHash =
   ExecutionHashBase<'76815629cca8924b1e89c24185babb1bfa0c777fa3f2758f782deecfbaa9f71a'>;
 export type ProfileHash =
@@ -272,8 +272,12 @@ export type FieldOutputTypes = {
       readonly workspaceId: CodecTypes['pg/text@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'REVOKED';
       readonly invitedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly tokenHash: CodecTypes['pg/text@1']['output'] | null;
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -362,8 +366,12 @@ export type FieldInputTypes = {
       readonly workspaceId: CodecTypes['pg/text@1']['input'];
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'REVOKED';
       readonly invitedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly tokenHash: CodecTypes['pg/text@1']['input'] | null;
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -448,12 +456,16 @@ export type StorageColumnTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
     readonly invite: {
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly invitedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'REVOKED';
+      readonly tokenHash: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly workspaceId: CodecTypes['pg/text@1']['output'];
     };
@@ -538,12 +550,16 @@ export type StorageColumnInputTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
     readonly invite: {
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly email: CodecTypes['pg/text@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly invitedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'REVOKED';
+      readonly tokenHash: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly workspaceId: CodecTypes['pg/text@1']['input'];
     };
@@ -655,8 +671,12 @@ export namespace Models {
     workspaceId: CodecTypes['pg/text@1']['output'];
     email: CodecTypes['pg/text@1']['output'];
     role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'REVOKED';
     invitedById: CodecTypes['pg/text@1']['output'] | null;
+    tokenHash: CodecTypes['pg/text@1']['output'] | null;
+    expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    revokedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     invitedBy: public_User | null;
@@ -889,6 +909,26 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
                 };
+                readonly tokenHash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly expiresAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly acceptedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly revokedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
@@ -903,7 +943,10 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['workspaceId', 'email'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['tokenHash'] },
+                { readonly columns: readonly ['workspaceId', 'email'] },
+              ];
               indexes: readonly [
                 {
                   readonly name: 'invite_workspaceId_idx_ba65f874';
@@ -921,6 +964,24 @@ type ContractBase = Omit<
                   readonly name: 'invite_invitedById_idx_61689f37';
                   readonly prefix: 'invite_invitedById_idx';
                   readonly columns: readonly ['invitedById'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'invite_status_idx_e98638ab';
+                  readonly prefix: 'invite_status_idx';
+                  readonly columns: readonly ['status'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'invite_expiresAt_idx_6b6b8c10';
+                  readonly prefix: 'invite_expiresAt_idx';
+                  readonly columns: readonly ['expiresAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'invite_workspaceId_status_idx_76d68132';
+                  readonly prefix: 'invite_workspaceId_status_idx';
+                  readonly columns: readonly ['workspaceId', 'status'];
                   readonly unique: false;
                 },
               ];
@@ -1400,7 +1461,14 @@ type ContractBase = Omit<
             };
             readonly InviteStatus: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED'];
+              readonly values: readonly [
+                'PENDING',
+                'ACCEPTED',
+                'REJECTED',
+                'EXPIRED',
+                'CANCELLED',
+                'REVOKED',
+              ];
             };
             readonly MemberRole: {
               readonly kind: 'valueSet';
@@ -1545,6 +1613,31 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly tokenHash: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly expiresAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly acceptedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly revokedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -1593,6 +1686,10 @@ type ContractBase = Omit<
                 readonly role: { readonly column: 'role' };
                 readonly status: { readonly column: 'status' };
                 readonly invitedById: { readonly column: 'invitedById' };
+                readonly tokenHash: { readonly column: 'tokenHash' };
+                readonly expiresAt: { readonly column: 'expiresAt' };
+                readonly acceptedAt: { readonly column: 'acceptedAt' };
+                readonly revokedAt: { readonly column: 'revokedAt' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
@@ -2088,6 +2185,7 @@ type ContractBase = Omit<
               { readonly name: 'REJECTED'; readonly value: 'REJECTED' },
               { readonly name: 'EXPIRED'; readonly value: 'EXPIRED' },
               { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
+              { readonly name: 'REVOKED'; readonly value: 'REVOKED' },
             ];
           };
           readonly BlockType: {

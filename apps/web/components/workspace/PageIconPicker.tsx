@@ -64,7 +64,7 @@ export default function PageIconPicker({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -6, scale: 0.99 }}
           transition={{ duration: 0.15 }}
-          className="absolute top-[190px] left-4 w-[320px] overflow-hidden rounded-xl border border-line bg-white shadow-pop sm:left-10 dark:border-[#272727] dark:bg-[#181818]"
+          className="absolute top-[190px] right-4 left-4 w-auto overflow-hidden rounded-xl border border-line bg-white shadow-pop sm:right-auto sm:left-10 sm:w-[320px] dark:border-[#272727] dark:bg-[#181818]"
         >
           <div className="flex items-center gap-1 border-b border-line p-1.5 dark:border-[#272727]">
             {(["emoji", "lucide"] as const).map((t) => (

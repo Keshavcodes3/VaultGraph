@@ -189,7 +189,7 @@ export default function SidebarItem(p: ItemProps) {
         ) : null}
 
         {!editing ? (
-          <span className="flex shrink-0 items-center opacity-0 transition-opacity duration-120 group-hover:opacity-100 focus-within:opacity-100">
+          <span className="flex shrink-0 items-center opacity-0 transition-opacity duration-120 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100">
             <button
               onClick={(e) => {
                 e.stopPropagation();
