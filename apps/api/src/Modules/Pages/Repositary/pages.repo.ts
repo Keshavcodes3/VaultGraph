@@ -228,7 +228,6 @@ export class pageRepositaryClass {
     parentId: string | null
   ): Promise<number> => {
     const where: Record<string, unknown> = { workspaceId, parentId };
-    // projectId null vs set matters for scoping; only filter when set.
     if (projectId !== null && projectId !== undefined) {
       where["projectId"] = projectId;
     }
@@ -244,7 +243,6 @@ export class pageRepositaryClass {
     return max + 1;
   };
 
-  /** Persist sibling ordering for the given ordered ids (renumbers 0..n). */
   reorderSiblings = async (orderedIds: string[]) => {
     for (let i = 0; i < orderedIds.length; i += 1) {
       await (this.pagesRepo as any)
@@ -254,7 +252,6 @@ export class pageRepositaryClass {
   };
 
   update = async (data: UpdatePageInput & Record<string, unknown>, pageId: string) => {
-    // Map legacy parentPageId -> parentId without dropping either.
     const patch: Record<string, unknown> = { ...(data as object) };
     if (
       (patch["parentPageId"] as string | null | undefined) !== undefined &&
@@ -285,7 +282,6 @@ export class pageRepositaryClass {
       .delete();
   };
 
-  /** Backwards-compatible alias. */
   delete = this.deletePage;
 
   countByWorkspace = async (workspaceId: string) => {
@@ -300,7 +296,6 @@ export class pageRepositaryClass {
     return false;
   };
 
-  /** Public existence check (wraps the preserved private helper). */
   exists = async (pageId: string) => {
     return await this.doPageExist(pageId);
   };
