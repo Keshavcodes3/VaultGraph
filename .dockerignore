@@ -1,0 +1,10 @@
+node_modules
+.next
+.turbo
+*.log
+.git
+apps/*/.next
+apps/*/.turbo
+apps/web
+apps/docs
+**/.env

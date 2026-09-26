@@ -11,21 +11,20 @@ export class AuthController {
     res: Parameters<Parameters<typeof asyncHandler>[0]>[1],
     token: string
   ) => {
-    res.cookie("accessToken", token, {
+    // Split-domain deploys (web on Vercel, API on Render) are cross-site:
+    // `SameSite=Lax` cookies are never sent by fetch there, so production
+    // must use `SameSite=None; Secure`. Local dev stays Lax (plain http).
+    const isProd = process.env["NODE_ENV"] === "production";
+    const flags = {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env["NODE_ENV"] === "production",
+      sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+      secure: isProd,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
-    });
+    };
+    res.cookie("accessToken", token, flags);
     // Backwards compat: older middleware read `refreshToken`.
-    res.cookie("refreshToken", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env["NODE_ENV"] === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: "/",
-    });
+    res.cookie("refreshToken", token, flags);
   };
 
   register = asyncHandler(async (req, res) => {
@@ -41,8 +40,15 @@ export class AuthController {
   });
 
   logout = asyncHandler(async (_req, res) => {
-    res.clearCookie("accessToken", { path: "/" });
-    res.clearCookie("refreshToken", { path: "/" });
+    // Flags must match setAuthCookie or the browser keeps the cookies.
+    const isProd = process.env["NODE_ENV"] === "production";
+    const flags = {
+      path: "/",
+      sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+      secure: isProd,
+    };
+    res.clearCookie("accessToken", flags);
+    res.clearCookie("refreshToken", flags);
     return apiSuccess(res, null, "Logged out successfully", 200);
   });
 

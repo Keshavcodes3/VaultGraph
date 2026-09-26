@@ -1,0 +1,27 @@
+# VaultGraph API — Bun + Express + Postgres (Prisma 8 ORM).
+# Built from the REPO ROOT so workspace layout (apps/api + packages/shared)
+# and tsconfig `paths` keep resolving exactly like local `bun dev`.
+FROM oven/bun:1.4.2 AS base
+WORKDIR /app
+
+# argon2 ships a native binding — needs a compiler at install time.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install workspace deps first (better layer caching).
+COPY package.json bun.lock ./
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
+COPY packages/shared/package.json ./packages/shared/package.json
+RUN bun install
+
+# Then the sources the API actually runs.
+COPY apps/api ./apps/api
+COPY packages/shared ./packages/shared
+
+WORKDIR /app/apps/api
+ENV NODE_ENV=production
+# Render injects $PORT (default 10000); index.ts reads process.env.PORT.
+EXPOSE 4000
+CMD ["bun", "index.ts"]
