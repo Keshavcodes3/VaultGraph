@@ -3,6 +3,11 @@ import express from "express";
 import { authRouter } from "./Modules/auth/Routes/auth.routes";
 import projectRouter from "./Modules/Projects/Routes/project.routes";
 import workspaceRouter from "./Modules/Workspace/Routes/workspace.routes"
+import memberRouter from "./Modules/Workspace/Routes/member.routes";
+import {
+  invitationTokenRouter,
+  workspaceInvitationRouter,
+} from "./Modules/Workspace/Routes/invitation.routes";
 import pageRouter from "./Modules/Pages/Routes/page.routes";
 import blockRouter from "./Modules/Pages/Routes/block.routes";
 import { apiSuccess } from "./Shared/apiResponse";
@@ -26,6 +31,15 @@ export const createApp = () => {
 
   app.use("/api/auth", authRouter);
   app.use('/api/workspaces',workspaceRouter)
+  // Workspace collaboration (members, invitations, leave, transfer).
+  // Served versioned as specified, with unversioned aliases preserved
+  // for existing clients (same convention as pages/blocks).
+  app.use("/api/workspaces", memberRouter);
+  app.use("/api/v1/workspaces", memberRouter);
+  app.use("/api/workspaces", workspaceInvitationRouter);
+  app.use("/api/v1/workspaces", workspaceInvitationRouter);
+  app.use("/api/invitations", invitationTokenRouter);
+  app.use("/api/v1/invitations", invitationTokenRouter);
   app.use("/api/projects", projectRouter);
   // Page + Block system (versioned as specified; unversioned aliases preserved
   // for existing clients).

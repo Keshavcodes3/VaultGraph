@@ -120,7 +120,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <Magnetic>
             <a
-              href="#cta"
+              href="/register"
               className="group inline-flex items-center gap-[7px] rounded-pill bg-ink px-[18px] py-2.5 text-[13.5px] font-semibold tracking-[-0.01em] whitespace-nowrap text-white transition-colors duration-250 hover:bg-brand max-md:hidden"
             >
               Start building
@@ -165,7 +165,7 @@ export default function Navbar() {
               </motion.a>
             ))}
             <a
-              href="#cta"
+              href="/register"
               className="mt-1.5 inline-flex items-center justify-center gap-2 rounded-xl bg-ink p-3 text-[15px] font-semibold text-white"
               onClick={() => setOpen(false)}
             >

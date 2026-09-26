@@ -69,6 +69,14 @@ export class workspaceRepoClass {
       .all();
   };
 
+  // GET BY IDS (member-of workspaces for listing)
+  findByIds = async (ids: string[]) => {
+    if (ids.length === 0) return [];
+    return await this.workspaceRepo
+      .where((w) => w.id.in(ids))
+      .all();
+  };
+
   // CHECK IF WORKSPACE EXISTS
   exists = async (id: string) => {
     const workspace = await this.workspaceRepo.first({
@@ -114,6 +122,28 @@ export class workspaceRepoClass {
     return workspace;
   };
 
+  // UPDATE BY ID (no owner filter — callers authorize first, so
+  // effective owners via membership can manage the workspace)
+  updateById = async (
+    id: string,
+    data: {
+      name?: string;
+      slug?: string;
+    }
+  ) => {
+    await this.workspaceRepo
+      .where({
+        id,
+      })
+      .update({
+        ...data,
+        // Prisma 8's timestamptz codec expects a Temporal.Instant, not a Date.
+        updatedAt: nowInstant(),
+      });
+
+    return await this.getWorkspaceById(id);
+  };
+
   // DELETE
   delete = async (
     id: string,
@@ -125,6 +155,25 @@ export class workspaceRepoClass {
         ownerId,
       })
       .delete();
+  };
+
+  // SET OWNER (ownership transfer / owner-leave succession).
+  // No owner filter by design: callers authorize before invoking.
+  setOwner = async (
+    id: string,
+    ownerId: string
+  ) => {
+    await this.workspaceRepo
+      .where({
+        id,
+      })
+      .update({
+        ownerId,
+        // Prisma 8's timestamptz codec expects a Temporal.Instant, not a Date.
+        updatedAt: nowInstant(),
+      });
+
+    return await this.getWorkspaceById(id);
   };
 
   // COUNT OWNER'S WORKSPACES

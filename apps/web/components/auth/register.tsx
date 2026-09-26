@@ -218,7 +218,7 @@ export default function RegisterForm() {
       setSucceeded(true);
 
       redirectTimer.current = window.setTimeout(() => {
-        router.push("/");
+        router.push("/workspace");
       }, 1000);
     } catch (error) {
       if (
@@ -347,7 +347,7 @@ export default function RegisterForm() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <AuthSuccess title="Workspace created." />
+                <AuthSuccess title="Workspace created." redirectTo="/workspace" />
               </motion.div>
             ) : (
               <motion.div key="submit">

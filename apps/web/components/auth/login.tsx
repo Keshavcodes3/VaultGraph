@@ -65,7 +65,7 @@ export default function LoginForm() {
       await login.mutateAsync({ email: email.trim(), password });
       // Let the success animation play before leaving.
       setSucceeded(true);
-      redirectTimer.current = window.setTimeout(() => router.push("/"), 900);
+      redirectTimer.current = window.setTimeout(() => router.push("/workspace"), 900);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setFormError("That email and password don't match. Want to try again?");
@@ -159,7 +159,7 @@ export default function LoginForm() {
           ) : null}
 
           {succeeded ? (
-            <AuthSuccess title="Welcome back." />
+            <AuthSuccess title="Welcome back." redirectTo="/workspace" />
           ) : (
             <AuthSubmit
               loading={login.isPending}

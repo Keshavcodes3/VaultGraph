@@ -17,6 +17,7 @@ import {
   apiPageToEditor,
   editorBlockToApiPayload,
 } from "@/lib/pages/mapping";
+import { patchPageTitleInCache } from "@/lib/pages/optimistic";
 import type { Block, PageItem } from "./data";
 
 function isFreshEditor(page: PageItem): boolean {
@@ -50,10 +51,14 @@ export default function PageView({
   pageId,
   propsOpen = false,
   onToggleProps,
+  onOpenSidebar,
+  onDeletePage,
 }: {
   pageId: string;
   propsOpen?: boolean;
   onToggleProps?: () => void;
+  onOpenSidebar?: () => void;
+  onDeletePage?: (id: string) => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -80,7 +85,9 @@ export default function PageView({
     async (patch: { title?: string; description?: string; icon?: string }) => {
       const id = pageIdRef.current;
       await pagesApi.update(id, patch);
-      queryClient.invalidateQueries({ queryKey: pageKeys.detail(id) });
+      // Tree + sidebar read from pageKeys.all — detail-only invalidation
+      // left the sidebar showing the previous name.
+      queryClient.invalidateQueries({ queryKey: pageKeys.all });
     },
     [queryClient]
   );
@@ -224,6 +231,11 @@ export default function PageView({
       setEditorPage((prev) =>
         prev ? { ...prev, ...patch, updatedAt: "Just now" } : prev
       );
+      // Optimistic: sidebar + breadcrumbs update on this keystroke,
+      // not 800ms later when the debounced save fires.
+      if (patch.title !== undefined) {
+        patchPageTitleInCache(queryClient, pageIdRef.current, patch.title);
+      }
       const body: { title?: string; description?: string; icon?: string } = {};
       if (patch.title !== undefined) body.title = patch.title;
       if (patch.description !== undefined)
@@ -231,7 +243,7 @@ export default function PageView({
       if (patch.icon !== undefined) body.icon = patch.icon;
       if (Object.keys(body).length > 0) metaAutosave.schedule(body);
     },
-    [metaAutosave]
+    [metaAutosave, queryClient]
   );
 
   const toggleFav = useCallback(() => {
@@ -292,7 +304,7 @@ export default function PageView({
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-col">
+    <div className="flex min-h-[60vh] flex-col overflow-x-clip">
       <PageHeader
         crumbs={crumbs}
         isFavorite={data.page.isFavorite}
@@ -304,7 +316,8 @@ export default function PageView({
         onToggleFav={toggleFav}
         onCopyLink={copyLink}
         onToggleProps={onToggleProps ?? (() => {})}
-        onOpenSidebar={() => router.push("/workspace")}
+        onOpenSidebar={onOpenSidebar ?? (() => router.push("/workspace"))}
+        onDelete={onDeletePage ? () => onDeletePage(pageId) : undefined}
       />
       {saveError ? (
         <div className="mx-auto mt-3 flex w-full max-w-[850px] items-center justify-between gap-3 rounded-lg border border-rosy/30 bg-rosy/10 px-3 py-2 text-[13px] text-ink sm:mx-auto sm:px-12 dark:text-white">

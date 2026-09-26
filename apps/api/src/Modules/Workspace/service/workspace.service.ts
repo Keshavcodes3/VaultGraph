@@ -1,10 +1,14 @@
 import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
+  WorkspaceRole,
 } from "@repo/shared/workspace-types";
 
+import { db } from "../../../prisma/db";
 import { HttpError } from "../../../Shared/httpError";
+import { AuthRepository } from "../../auth/repositary/auth.repo";
 import { workspaceRepoClass } from "../Repostiary/workspace.repositary";
+import { memberRepoClass } from "../Repostiary/member.repositary";
 
 import {
   WorkspaceAccessDeniedError,
@@ -20,8 +24,51 @@ import {
 
 export class workspaceServiceClass {
   constructor(
-    private readonly workspaceRepo: workspaceRepoClass
+    private readonly workspaceRepo: workspaceRepoClass,
+    private readonly memberRepo: memberRepoClass,
+    private readonly authRepo: AuthRepository
   ) {}
+
+  // Effective role: legacy owner counts as OWNER, else membership role.
+  private getEffectiveRole = async (
+    workspace: { id: string; ownerId: string },
+    userId: string
+  ): Promise<WorkspaceRole | null> => {
+    if (workspace.ownerId === userId) {
+      return "OWNER";
+    }
+    const membership =
+      await this.memberRepo.findByWorkspaceAndUser(
+        workspace.id,
+        userId
+      );
+    return (membership?.role as WorkspaceRole | undefined) ?? null;
+  };
+
+  // The workspace owner must always hold an OWNER membership
+  // (backfills legacy workspaces created before memberships existed).
+  private ensureOwnerMembership = async (workspace: {
+    id: string;
+    ownerId: string;
+  }) => {
+    const existing =
+      await this.memberRepo.findByWorkspaceAndUser(
+        workspace.id,
+        workspace.ownerId
+      );
+    if (existing) return;
+    const owner = await this.authRepo.findById(workspace.ownerId);
+    if (!owner) return;
+    try {
+      await this.memberRepo.create({
+        workspaceId: workspace.id,
+        userId: workspace.ownerId,
+        role: "OWNER",
+      });
+    } catch {
+      // Concurrent backfill — the unique constraint is the arbiter.
+    }
+  };
 
   // CREATE WORKSPACE
   create = async (
@@ -54,13 +101,30 @@ export class workspaceServiceClass {
       throw new WorkspaceSlugAlreadyExistsError();
     }
 
-    return await this.workspaceRepo.create(
-      {
-        name,
-        slug,
-      },
-      ownerId
-    );
+    // Workspace + OWNER membership are created atomically so a workspace
+    // never exists without its owner's membership.
+    return await db.transaction(async (tx) => {
+      const txWorkspaceRepo = new workspaceRepoClass(
+        tx.orm.public.Workspace
+      );
+      const txMemberRepo = new memberRepoClass(
+        tx.orm.public.Member,
+        tx.orm.public.User
+      );
+      const workspace = await txWorkspaceRepo.create(
+        {
+          name,
+          slug,
+        },
+        ownerId
+      );
+      await txMemberRepo.create({
+        workspaceId: workspace.id as string,
+        userId: ownerId,
+        role: "OWNER",
+      });
+      return workspace;
+    });
   };
 
   // GET WORKSPACE
@@ -75,16 +139,44 @@ export class workspaceServiceClass {
       throw new WorkspaceNotFoundError();
     }
 
-    if (workspace.ownerId !== ownerId) {
+    const role = await this.getEffectiveRole(
+      workspace as { id: string; ownerId: string },
+      ownerId
+    );
+    if (!role) {
       throw new WorkspaceAccessDeniedError();
     }
+
+    await this.ensureOwnerMembership(
+      workspace as { id: string; ownerId: string }
+    );
 
     return workspace;
   };
 
-  // GET ALL USER WORKSPACES
+  // GET ALL USER WORKSPACES (owned + member of)
   getAll = async (ownerId: string) => {
-    return await this.workspaceRepo.getAllWorkspaces(ownerId);
+    const owned = await this.workspaceRepo.getAllWorkspaces(ownerId);
+
+    const memberships = await this.memberRepo.findByUser(ownerId);
+    const memberWorkspaceIds = [
+      ...new Set(
+        memberships.map((m) => m.workspaceId as string)
+      ),
+    ].filter((id) => !owned.some((w) => (w.id as string) === id));
+
+    const shared = await this.workspaceRepo.findByIds(
+      memberWorkspaceIds
+    );
+
+    // Backfill OWNER memberships for legacy owned workspaces.
+    for (const w of owned) {
+      await this.ensureOwnerMembership(
+        w as unknown as { id: string; ownerId: string }
+      );
+    }
+
+    return [...owned, ...shared];
   };
 
   // GET WORKSPACE BY SLUG
@@ -92,20 +184,30 @@ export class workspaceServiceClass {
     slug: string,
     ownerId: string
   ) => {
-    const workspace =
-      await this.workspaceRepo.getWorkspaceBySlugAndOwner(
-        normalizeWorkspaceSlug(slug),
-        ownerId
-      );
+    const workspace = await this.workspaceRepo.getWorkspaceBySlug(
+      normalizeWorkspaceSlug(slug)
+    );
 
     if (!workspace) {
       throw new WorkspaceNotFoundError();
     }
 
+    const role = await this.getEffectiveRole(
+      workspace as { id: string; ownerId: string },
+      ownerId
+    );
+    if (!role) {
+      throw new WorkspaceAccessDeniedError();
+    }
+
+    await this.ensureOwnerMembership(
+      workspace as { id: string; ownerId: string }
+    );
+
     return workspace;
   };
 
-  // UPDATE WORKSPACE
+  // UPDATE WORKSPACE (effective owners only)
   update = async (
     workspaceId: string,
     ownerId: string,
@@ -116,13 +218,18 @@ export class workspaceServiceClass {
     }
 
     const workspace =
-      await this.workspaceRepo.getWorkspaceByIdAndOwner(
-        workspaceId,
-        ownerId
-      );
+      await this.workspaceRepo.getWorkspaceById(workspaceId);
 
     if (!workspace) {
       throw new WorkspaceNotFoundError();
+    }
+
+    const role = await this.getEffectiveRole(
+      workspace as { id: string; ownerId: string },
+      ownerId
+    );
+    if (role !== "OWNER") {
+      throw new WorkspaceAccessDeniedError();
     }
 
     const updateData: {
@@ -149,31 +256,35 @@ export class workspaceServiceClass {
       updateData.slug = slug;
     }
 
-    return await this.workspaceRepo.update(
+    return await this.workspaceRepo.updateById(
       workspaceId,
-      ownerId,
       updateData
     );
   };
 
-  // DELETE WORKSPACE
+  // DELETE WORKSPACE (effective owners only)
   delete = async (
     workspaceId: string,
     ownerId: string
   ) => {
     const workspace =
-      await this.workspaceRepo.getWorkspaceByIdAndOwner(
-        workspaceId,
-        ownerId
-      );
+      await this.workspaceRepo.getWorkspaceById(workspaceId);
 
     if (!workspace) {
       throw new WorkspaceNotFoundError();
     }
 
+    const role = await this.getEffectiveRole(
+      workspace as { id: string; ownerId: string },
+      ownerId
+    );
+    if (role !== "OWNER") {
+      throw new WorkspaceAccessDeniedError();
+    }
+
     await this.workspaceRepo.delete(
       workspaceId,
-      ownerId
+      workspace.ownerId as string
     );
   };
 

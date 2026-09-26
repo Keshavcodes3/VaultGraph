@@ -7,6 +7,7 @@ import {
   Link2,
   Menu,
   Star,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Tooltip from "./Tooltip";
@@ -24,6 +25,7 @@ interface HeaderProps {
   onCopyLink: () => void;
   onToggleProps: () => void;
   onOpenSidebar: () => void;
+  onDelete?: () => void;
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -127,6 +129,17 @@ export default function PageHeader(p: HeaderProps) {
             {copied ? <Check size={15} className="text-mint" /> : <Link2 size={15} />}
           </button>
         </Tooltip>
+        {p.onDelete ? (
+          <Tooltip label="Move to trash">
+            <button
+              onClick={p.onDelete}
+              aria-label="Move page to trash"
+              className="rounded-md p-2 text-ink-soft transition-colors hover:bg-rosy/10 hover:text-rosy dark:text-[#A1A1AA] dark:hover:bg-rosy/10 dark:hover:text-rosy"
+            >
+              <Trash2 size={15} />
+            </button>
+          </Tooltip>
+        ) : null}
         <Tooltip label="Properties" kbd="⌘I">
           <button
             onClick={p.onToggleProps}

@@ -8,9 +8,11 @@ import { validateBody } from "../../../Shared/validate";
 import { authenticate } from "../../../Middleware/auth.middleware";
 
 import { workspaceRepoClass } from "../Repostiary/workspace.repositary";
+import { memberRepoClass } from "../Repostiary/member.repositary";
 import { workspaceServiceClass } from "../service/workspace.service";
 import { workspaceControllerClass } from "../Controller/workspace.controller";
 
+import { authRepository } from "../../auth/repositary/auth.repo";
 import { db } from "../../../prisma/db";
 
 const router = Router();
@@ -19,8 +21,15 @@ const workspaceRepo = new workspaceRepoClass(
   db.orm.public.Workspace
 );
 
+const memberRepo = new memberRepoClass(
+  db.orm.public.Member,
+  db.orm.public.User
+);
+
 const workspaceService = new workspaceServiceClass(
-  workspaceRepo
+  workspaceRepo,
+  memberRepo,
+  authRepository
 );
 
 const workspaceController = new workspaceControllerClass(

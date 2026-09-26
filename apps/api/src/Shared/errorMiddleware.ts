@@ -2,7 +2,18 @@ import type { NextFunction, Request, Response } from "express";
 import { apiError } from "./apiResponse";
 import { HttpError } from "./httpError";
 import {
+  AlreadyWorkspaceMemberError,
+  InvitationAlreadyAcceptedError,
+  InvitationAlreadyExistsError,
+  InvitationEmailMismatchError,
+  InvitationExpiredError,
+  InvitationNotFoundError,
+  InvitationRejectedError,
+  InvitationRevokedError,
+  InvalidInvitationRoleError,
+  LastOwnerError,
   WorkspaceAccessDeniedError,
+  WorkspaceMemberNotFoundError,
   WorkspaceNotFoundError,
   WorkspaceSlugAlreadyExistsError,
 } from "../Modules/Workspace/utils/workspace.errors";
@@ -47,6 +58,50 @@ export const errorHandler = (
 
   if (err instanceof WorkspaceSlugAlreadyExistsError) {
     return apiError(res, err.message, 409);
+  }
+
+  if (err instanceof WorkspaceMemberNotFoundError) {
+    return apiError(res, err.message, 404);
+  }
+
+  if (err instanceof InvitationNotFoundError) {
+    return apiError(res, err.message, 404);
+  }
+
+  if (err instanceof AlreadyWorkspaceMemberError) {
+    return apiError(res, err.message, 409);
+  }
+
+  if (err instanceof InvitationAlreadyExistsError) {
+    return apiError(res, err.message, 409);
+  }
+
+  if (err instanceof InvitationAlreadyAcceptedError) {
+    return apiError(res, err.message, 409);
+  }
+
+  if (err instanceof InvitationExpiredError) {
+    return apiError(res, err.message, 410);
+  }
+
+  if (err instanceof InvitationRevokedError) {
+    return apiError(res, err.message, 410);
+  }
+
+  if (err instanceof InvitationRejectedError) {
+    return apiError(res, err.message, 410);
+  }
+
+  if (err instanceof InvitationEmailMismatchError) {
+    return apiError(res, err.message, 403);
+  }
+
+  if (err instanceof InvalidInvitationRoleError) {
+    return apiError(res, err.message, 403);
+  }
+
+  if (err instanceof LastOwnerError) {
+    return apiError(res, err.message, 400);
   }
 
   if (err instanceof ProjectNotFoundError) {

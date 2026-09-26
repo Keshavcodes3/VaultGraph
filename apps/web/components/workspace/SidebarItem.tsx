@@ -28,6 +28,7 @@ interface ItemProps {
   depth: number;
   active: boolean;
   open: boolean;
+  deleting?: boolean;
   onToggle: () => void;
   dropPos: DropPosition | null;
   moveTargets: MoveTarget[];
@@ -65,6 +66,12 @@ export default function SidebarItem(p: ItemProps) {
       return () => window.clearTimeout(t);
     }
   }, [editing, page.title]);
+
+  // Keep the rename draft in sync with external renames (e.g. page canvas)
+  // so the next edit never starts from a stale previous name.
+  useEffect(() => {
+    if (!editing) setDraft(page.title);
+  }, [page.title, editing]);
 
   const commit = () => {
     setEditing(false);
@@ -141,11 +148,13 @@ export default function SidebarItem(p: ItemProps) {
         }}
         style={{ paddingLeft: 4 + p.depth * 14 }}
         className={`group flex cursor-pointer items-center gap-[3px] rounded-md py-[5px] pr-1 text-[13.5px] transition-colors duration-120 ${
-          p.dropPos === "inside"
-            ? "bg-soft ring-1 ring-ink/20 dark:bg-white/10 dark:ring-white/30"
-            : p.active
-              ? "bg-soft font-medium text-ink dark:bg-white/10 dark:text-[#F5F5F5]"
-              : "text-ink-soft hover:bg-soft hover:text-ink dark:text-[#A1A1AA] dark:hover:bg-white/5 dark:hover:text-[#F5F5F5]"
+          p.deleting
+            ? "pointer-events-none opacity-50"
+            : p.dropPos === "inside"
+              ? "bg-soft ring-1 ring-ink/20 dark:bg-white/10 dark:ring-white/30"
+              : p.active
+                ? "bg-soft font-medium text-ink dark:bg-white/10 dark:text-[#F5F5F5]"
+                : "text-ink-soft hover:bg-soft hover:text-ink dark:text-[#A1A1AA] dark:hover:bg-white/5 dark:hover:text-[#F5F5F5]"
         }`}
       >
         {kids.length > 0 ? (
@@ -184,12 +193,20 @@ export default function SidebarItem(p: ItemProps) {
           <span className="min-w-0 flex-1 truncate">{page.title || "Untitled"}</span>
         )}
 
+        {p.deleting ? (
+          <span
+            role="status"
+            aria-label={`Deleting ${page.title || "Untitled"}`}
+            className="block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-[2px] border-rosy/30 border-t-rosy"
+          />
+        ) : null}
+
         {page.favorite && !editing ? (
           <Star size={11} fill="currentColor" className="shrink-0 text-amberish" />
         ) : null}
 
         {!editing ? (
-          <span className="flex shrink-0 items-center opacity-0 transition-opacity duration-120 group-hover:opacity-100 focus-within:opacity-100">
+          <span className="flex shrink-0 items-center opacity-0 transition-opacity duration-120 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100">
             <button
               onClick={(e) => {
                 e.stopPropagation();

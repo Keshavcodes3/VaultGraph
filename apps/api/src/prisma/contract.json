@@ -124,6 +124,10 @@
               {
                 "name": "CANCELLED",
                 "value": "CANCELLED"
+              },
+              {
+                "name": "REVOKED",
+                "value": "REVOKED"
               }
             ]
           },
@@ -297,6 +301,13 @@
           },
           "Invite": {
             "fields": {
+              "acceptedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -311,6 +322,13 @@
                   "kind": "scalar"
                 }
               },
+              "expiresAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -322,6 +340,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
                 }
               },
@@ -349,6 +374,13 @@
                   "entityName": "InviteStatus",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "tokenHash": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "updatedAt": {
@@ -402,11 +434,17 @@
             },
             "storage": {
               "fields": {
+                "acceptedAt": {
+                  "column": "acceptedAt"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
                 "email": {
                   "column": "email"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
                 },
                 "id": {
                   "column": "id"
@@ -414,11 +452,17 @@
                 "invitedById": {
                   "column": "invitedById"
                 },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
                 "role": {
                   "column": "role"
                 },
                 "status": {
                   "column": "status"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -1330,12 +1374,17 @@
                   "prefix": "invite_role_check"
                 },
                 {
-                  "expression": "\"status\" IN ('PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED')",
-                  "name": "invite_status_check_d85c7349",
+                  "expression": "\"status\" IN ('PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'CANCELLED', 'REVOKED')",
+                  "name": "invite_status_check_ef82191f",
                   "prefix": "invite_status_check"
                 }
               ],
               "columns": {
+                "acceptedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "default": {
@@ -1350,6 +1399,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "expiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1358,6 +1412,11 @@
                 "invitedById": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": true
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "role": {
@@ -1389,6 +1448,11 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -1452,10 +1516,26 @@
                 },
                 {
                   "columns": [
+                    "expiresAt"
+                  ],
+                  "name": "invite_expiresAt_idx_6b6b8c10",
+                  "prefix": "invite_expiresAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "invitedById"
                   ],
                   "name": "invite_invitedById_idx_61689f37",
                   "prefix": "invite_invitedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "status"
+                  ],
+                  "name": "invite_status_idx_e98638ab",
+                  "prefix": "invite_status_idx",
                   "unique": false
                 },
                 {
@@ -1465,6 +1545,15 @@
                   "name": "invite_workspaceId_idx_ba65f874",
                   "prefix": "invite_workspaceId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "workspaceId",
+                    "status"
+                  ],
+                  "name": "invite_workspaceId_status_idx_76d68132",
+                  "prefix": "invite_workspaceId_status_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -1473,6 +1562,11 @@
                 ]
               },
               "uniques": [
+                {
+                  "columns": [
+                    "tokenHash"
+                  ]
+                },
                 {
                   "columns": [
                     "workspaceId",
@@ -2086,7 +2180,8 @@
                 "ACCEPTED",
                 "REJECTED",
                 "EXPIRED",
-                "CANCELLED"
+                "CANCELLED",
+                "REVOKED"
               ]
             },
             "MemberRole": {
@@ -2104,7 +2199,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "85f9c383507b4742e2b2c944e28c4b7d15832e61f3a0543406506a5980cebae2"
+    "storageHash": "b2a647ed290f8a01140f9cfd3c367cab17f2ce9ff9561ee9f02da25ecdf4073d"
   },
   "execution": {
     "executionHash": "76815629cca8924b1e89c24185babb1bfa0c777fa3f2758f782deecfbaa9f71a",

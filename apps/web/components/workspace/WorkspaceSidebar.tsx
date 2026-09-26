@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import AskKira from "./AskKira";
 import SidebarTree from "./SidebarTree";
 import type { MoveTarget } from "./SidebarItem";
 import Tooltip from "./Tooltip";
@@ -52,6 +53,7 @@ interface SidebarProps {
   mobileOpen: boolean;
   theme: "light" | "dark";
   moveTargets: MoveTarget[];
+  deletingIds?: Set<string>;
   onSwitchWorkspace: (id: string) => void;
   onCreateWorkspace: (name: string) => void;
   onSelect: (id: string) => void;
@@ -115,12 +117,14 @@ function QuickRow({
 function ProjectRow({
   project,
   active,
+  deleting,
   onSelect,
   onRename,
   onDelete,
 }: {
   project: SidebarProject;
   active: boolean;
+  deleting?: boolean;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
@@ -174,11 +178,19 @@ function ProjectRow({
       )}
       <button
         onClick={onDelete}
-        aria-label={`Delete ${project.name || "Untitled"}`}
-        title={`Delete ${project.name || "Untitled"}`}
-        className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-rosy focus-visible:opacity-100"
+        disabled={deleting}
+        aria-label={deleting ? `Deleting ${project.name || "Untitled"}` : `Delete ${project.name || "Untitled"}`}
+        title={deleting ? "Deleting…" : `Delete ${project.name || "Untitled"}`}
+        className="shrink-0 rounded p-0.5 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-rosy focus-visible:opacity-100 disabled:opacity-100 max-md:opacity-100"
       >
-        <X size={13} />
+        {deleting ? (
+          <span
+            aria-hidden
+            className="block h-[13px] w-[13px] animate-spin rounded-full border-[2px] border-rosy/30 border-t-rosy"
+          />
+        ) : (
+          <X size={13} />
+        )}
       </button>
     </div>
   );
@@ -307,6 +319,7 @@ export default function WorkspaceSidebar(p: SidebarProps) {
                   key={proj.id}
                   project={proj}
                   active={p.activeProjectId === proj.id}
+                  deleting={p.deletingIds?.has(proj.id) ?? false}
                   onSelect={() =>
                     p.onSelectProject(p.activeProjectId === proj.id ? null : proj.id)
                   }
@@ -362,6 +375,7 @@ export default function WorkspaceSidebar(p: SidebarProps) {
               pages={p.pages}
               activeId={p.activeId}
               moveTargets={p.moveTargets}
+              deletingIds={p.deletingIds}
               onSelect={p.onSelect}
               onAddChild={(id) => p.onNewPage(id)}
               onFavorite={p.onToggleFav}
@@ -389,6 +403,10 @@ export default function WorkspaceSidebar(p: SidebarProps) {
               ) : null
             }
           />
+        </div>
+
+        <div className="pt-1">
+          <AskKira />
         </div>
       </div>
 

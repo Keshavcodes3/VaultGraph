@@ -80,7 +80,7 @@ export default function FinalCTA() {
           </div>
           <Magnetic>
             <a
-              href="#top"
+              href="/register"
               className="mt-12 inline-flex items-center gap-3 rounded-pill bg-ink py-5 pr-9 pl-10 text-lg font-semibold tracking-[-0.015em] text-white shadow-pop transition-all duration-300 hover:bg-brand hover:shadow-[0_20px_50px_-16px_rgba(79,70,229,0.6)]"
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}

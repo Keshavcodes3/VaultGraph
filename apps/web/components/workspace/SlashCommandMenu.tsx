@@ -88,7 +88,7 @@ export default function SlashCommandMenu({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -4, scale: 0.99 }}
       transition={{ duration: 0.14 }}
-      className="absolute top-full left-8 z-30 mt-1 max-h-[300px] w-[300px] overflow-y-auto rounded-xl border border-line bg-white p-1.5 shadow-pop dark:border-[#272727] dark:bg-[#181818]"
+      className="absolute top-full left-8 z-30 mt-1 max-h-[300px] w-[min(300px,calc(100vw-3rem))] overflow-y-auto rounded-xl border border-line bg-white p-1.5 shadow-pop dark:border-[#272727] dark:bg-[#181818]"
     >
       <AnimatePresence>
         {flat.length === 0 ? (
