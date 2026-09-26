@@ -72,7 +72,7 @@ export default function Hero() {
           >
             <Magnetic>
               <a
-                href="#cta"
+                href="/register"
                 className="group inline-flex items-center gap-2.5 rounded-pill bg-ink px-7 py-[15px] text-[15.5px] font-semibold tracking-[-0.01em] text-white shadow-card transition-all duration-250 hover:bg-brand hover:shadow-[0_12px_32px_-12px_rgba(79,70,229,0.55)]"
               >
                 Start building

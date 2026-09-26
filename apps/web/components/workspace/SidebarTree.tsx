@@ -10,6 +10,7 @@ interface TreeProps {
   pages: PageItem[];
   activeId: string | null;
   moveTargets: MoveTarget[];
+  deletingIds?: Set<string>;
   onSelect: (id: string) => void;
   onAddChild: (parentId: string) => void;
   onFavorite: (id: string) => void;
@@ -56,6 +57,7 @@ export default function SidebarTree(p: TreeProps) {
             depth={depth}
             active={pg.id === p.activeId}
             open={open}
+            deleting={p.deletingIds?.has(pg.id) ?? false}
             onToggle={() => toggle(pg.id)}
             dropPos={dragId && over?.id === pg.id ? over.pos : null}
             moveTargets={p.moveTargets}

@@ -15,7 +15,7 @@ type AuthSuccessProps = {
 
 export default function AuthSuccess({
   title,
-  redirectTo = "/",
+  redirectTo = "/workspace",
   duration = 1800,
 }: AuthSuccessProps) {
   const calm = useCalm();

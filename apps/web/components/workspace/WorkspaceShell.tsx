@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PaletteRoot, type PaletteAction } from "./CommandPalette";
+import DeleteOverlay, { type DeletePhase } from "./DeleteOverlay";
 import { EmptyPage, TrashView } from "./EmptyPage";
 import PageView from "./PageView";
 import PageProperties from "./PageProperties";
@@ -37,6 +38,7 @@ import {
   findApiTreeNode,
   siblingIdsOfTree,
 } from "@/lib/pages/mapping";
+import { patchPageTitleInCache } from "@/lib/pages/optimistic";
 import {
   findPage,
   flattenPages,
@@ -102,6 +104,15 @@ function errorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
+/** Minimum time the delete overlay stays in "deleting" so latency never flashes. */
+const MIN_DELETE_MS = 1000;
+/** Beat showing the success tick before the overlay lifts. */
+const DONE_PAUSE_MS = 550;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 /** Full-screen application shell. Backend-backed: workspace, projects, pages. */
 export default function WorkspaceShell() {
   const router = useRouter();
@@ -114,6 +125,10 @@ export default function WorkspaceShell() {
   const [palette, setPalette] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [actionError, setActionError] = useState<{ message: string; retry: () => void } | null>(null);
+  const [deleteOverlay, setDeleteOverlay] = useState<{ title: string; subtitle?: string } | null>(null);
+  const [deletePhase, setDeletePhase] = useState<DeletePhase>("deleting");
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [emptyingTrash, setEmptyingTrash] = useState(false);
 
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -121,6 +136,45 @@ export default function WorkspaceShell() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [workspaceDraft, setWorkspaceDraft] = useState("");
   const hydratedWorkspace = useRef(false);
+
+  /* ----- delete overlay (masks latency with a ~1s Razorpay-style beat) ----- */
+
+  const markDeleting = useCallback((ids: string[], on: boolean) => {
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (on) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const runWithDeleteAnimation = useCallback(
+    async (
+      opts: { ids: string[]; title: string; subtitle?: string; emptyTrash?: boolean },
+      work: () => Promise<void>,
+    ) => {
+      setActionError(null);
+      setDeletePhase("deleting");
+      setDeleteOverlay({ title: opts.title, subtitle: opts.subtitle });
+      if (opts.emptyTrash) setEmptyingTrash(true);
+      else markDeleting(opts.ids, true);
+      const started = Date.now();
+      try {
+        await work();
+        const elapsed = Date.now() - started;
+        if (elapsed < MIN_DELETE_MS) await sleep(MIN_DELETE_MS - elapsed);
+        setDeletePhase("done");
+        await sleep(DONE_PAUSE_MS);
+      } finally {
+        if (opts.emptyTrash) setEmptyingTrash(false);
+        else markDeleting(opts.ids, false);
+        setDeleteOverlay(null);
+      }
+    },
+    [markDeleting],
+  );
 
   /* ----- session ----- */
 
@@ -231,15 +285,26 @@ export default function WorkspaceShell() {
   const handleDeleteProject = useCallback(
     async (id: string) => {
       if (!workspaceId) return;
+      const name =
+        (projects ?? []).find((p) => p.id === id)?.name?.trim() || "Untitled project";
       try {
-        setActionError(null);
-        await deleteProject.mutateAsync({ projectId: id, workspaceId });
-        setActiveProjectId((cur) => (cur === id ? null : cur));
+        await runWithDeleteAnimation(
+          {
+            ids: [id],
+            title: "Deleting project",
+            subtitle: `“${name}” is being removed…`,
+          },
+          async () => {
+            await deleteProject.mutateAsync({ projectId: id, workspaceId });
+            queryClient.invalidateQueries({ queryKey: pageKeys.all });
+            setActiveProjectId((cur) => (cur === id ? null : cur));
+          },
+        );
       } catch (error) {
         setActionError({ message: errorMessage(error), retry: () => void handleDeleteProject(id) });
       }
     },
-    [workspaceId, deleteProject]
+    [workspaceId, deleteProject, projects, runWithDeleteAnimation, queryClient],
   );
 
   /* ----- page tree (real) ----- */
@@ -309,6 +374,16 @@ export default function WorkspaceShell() {
     [workspaceId]
   );
 
+  // Auto-open the first page when nothing is selected but pages exist
+  // (stale stored id, project filter change, post-delete fallback).
+  // Without this the canvas wrongly begs you to "create your first page".
+  // NOTE: must live after `select` is initialized (TDZ otherwise).
+  useEffect(() => {
+    if (trashOpen || activeId || treeLoading || !treeData) return;
+    const first = flat[0];
+    if (first) select(first.id);
+  }, [trashOpen, activeId, treeLoading, treeData, flat, select]);
+
   /* ----- page ops (all hit the API, then invalidate) ----- */
 
   const refreshPages = useCallback(() => {
@@ -341,18 +416,19 @@ export default function WorkspaceShell() {
 
   const rename = useCallback(
     async (id: string, title: string) => {
-      const run = async () => {
-        await pagesApi.update(id, { title });
-        refreshPages();
-      };
+      const trimmed = title.trim();
+      // Optimistic: sidebar updates instantly, server confirms after.
+      patchPageTitleInCache(queryClient, id, trimmed);
       try {
         setActionError(null);
-        await run();
+        await pagesApi.update(id, { title: trimmed });
+        refreshPages();
       } catch (error) {
+        refreshPages();
         setActionError({ message: errorMessage(error), retry: () => void rename(id, title) });
       }
     },
-    [refreshPages]
+    [refreshPages, queryClient]
   );
 
   const duplicate = useCallback(
@@ -374,75 +450,98 @@ export default function WorkspaceShell() {
 
   const remove = useCallback(
     async (id: string) => {
-      const run = async () => {
-        await pagesApi.archive(id);
-        refreshPages();
-        if (id === activeId) {
-          const parent = findApiParent(tree, id);
-          const fallback =
-            (parent ? parent.id : null) ??
-            tree.filter((n) => n.id !== id)[0]?.id ??
-            null;
-          setActiveId(fallback);
-        }
-      };
+      const title =
+        findPage(pages, id)?.title?.trim() ||
+        findApiTreeNode(tree, id)?.title?.trim() ||
+        "Untitled";
       try {
-        setActionError(null);
-        await run();
+        await runWithDeleteAnimation(
+          {
+            ids: [id],
+            title: "Deleting page",
+            subtitle: `“${title}” is moving to trash…`,
+          },
+          async () => {
+            await pagesApi.archive(id);
+            refreshPages();
+            if (id === activeId) {
+              const parent = findApiParent(tree, id);
+              const fallback =
+                (parent ? parent.id : null) ??
+                tree.filter((n) => n.id !== id)[0]?.id ??
+                null;
+              setActiveId(fallback);
+            }
+          },
+        );
       } catch (error) {
         setActionError({ message: errorMessage(error), retry: () => void remove(id) });
       }
     },
-    [tree, activeId, refreshPages]
+    [tree, pages, activeId, refreshPages, runWithDeleteAnimation]
   );
 
   const restore = useCallback(
     async (id: string) => {
-      const run = async () => {
-        await pagesApi.restore(id);
-        refreshPages();
-      };
+      markDeleting([id], true);
       try {
         setActionError(null);
-        await run();
+        await pagesApi.restore(id);
+        refreshPages();
       } catch (error) {
         setActionError({ message: errorMessage(error), retry: () => void restore(id) });
+      } finally {
+        markDeleting([id], false);
       }
     },
-    [refreshPages]
+    [refreshPages, markDeleting]
   );
 
   const deleteForever = useCallback(
     async (id: string) => {
-      const run = async () => {
-        await pagesApi.remove(id);
-        queryClient.removeQueries({ queryKey: pageKeys.detail(id) });
-        refreshPages();
-      };
+      const title =
+        trash.find((t) => t.page.id === id)?.page.title?.trim() || "Untitled";
       try {
-        setActionError(null);
-        await run();
+        await runWithDeleteAnimation(
+          {
+            ids: [id],
+            title: "Deleting forever",
+            subtitle: `“${title}” is being permanently removed…`,
+          },
+          async () => {
+            await pagesApi.remove(id);
+            queryClient.removeQueries({ queryKey: pageKeys.detail(id) });
+            refreshPages();
+          },
+        );
       } catch (error) {
         setActionError({ message: errorMessage(error), retry: () => void deleteForever(id) });
       }
     },
-    [queryClient, refreshPages]
+    [queryClient, refreshPages, trash, runWithDeleteAnimation]
   );
 
   const emptyTrash = useCallback(async () => {
     const ids = trash.map((t) => t.page.id);
-    const run = async () => {
-      await Promise.all(ids.map((id) => pagesApi.remove(id)));
-      for (const id of ids) queryClient.removeQueries({ queryKey: pageKeys.detail(id) });
-      refreshPages();
-    };
+    if (ids.length === 0) return;
     try {
-      setActionError(null);
-      await run();
+      await runWithDeleteAnimation(
+        {
+          ids,
+          title: "Emptying trash",
+          subtitle: `${ids.length} ${ids.length === 1 ? "page" : "pages"} being permanently removed…`,
+          emptyTrash: true,
+        },
+        async () => {
+          await Promise.all(ids.map((id) => pagesApi.remove(id)));
+          for (const id of ids) queryClient.removeQueries({ queryKey: pageKeys.detail(id) });
+          refreshPages();
+        },
+      );
     } catch (error) {
       setActionError({ message: errorMessage(error), retry: () => void emptyTrash() });
     }
-  }, [trash, queryClient, refreshPages]);
+  }, [trash, queryClient, refreshPages, runWithDeleteAnimation]);
 
   const toggleFav = useCallback(
     async (id: string) => {
@@ -685,6 +784,7 @@ export default function WorkspaceShell() {
 
   const sidebarWorkspaces = workspaces.map((w) => ({ id: w.id, name: w.name }));
   const sidebarProjects = (projects ?? []).map((proj) => ({ id: proj.id, name: proj.name }));
+  const hasPages = flat.length > 0;
 
   return (
     <div className={theme === "dark" ? "dark" : ""}>
@@ -717,6 +817,7 @@ export default function WorkspaceShell() {
           mobileOpen={mobileNav}
           theme={theme}
           moveTargets={moveTargets}
+          deletingIds={deletingIds}
           onSwitchWorkspace={switchWorkspace}
           onCreateWorkspace={(name) => void handleCreateWorkspace(name)}
           onSelect={select}
@@ -770,6 +871,8 @@ export default function WorkspaceShell() {
               {trashOpen ? (
                 <TrashView
                   trash={trash}
+                  deletingIds={deletingIds}
+                  emptying={emptyingTrash}
                   onRestore={(id) => void restore(id)}
                   onDeleteForever={(id) => void deleteForever(id)}
                   onEmpty={() => void emptyTrash()}
@@ -781,16 +884,19 @@ export default function WorkspaceShell() {
                   propsOpen={propsOpen}
                   onToggleProps={() => setPropsOpen((v) => !v)}
                   onOpenSidebar={() => setMobileNav(true)}
+                  onDeletePage={(id) => void remove(id)}
                 />
               ) : (
                 <EmptyPage
-                  title={treeLoading ? "Loading pages…" : "Nothing here yet."}
+                  title={treeLoading ? "Loading pages…" : hasPages ? "Select a page to begin." : "Nothing here yet."}
                   hint={
                     treeLoading
                       ? "Fetching your pages from the workspace."
-                      : "Choose a page from the sidebar, or create your first page and start building."
+                      : hasPages
+                        ? "Choose a page from the sidebar to keep writing — or start something brand new."
+                        : "Choose a page from the sidebar, or create your first page and start building."
                   }
-                  actionLabel={treeLoading ? undefined : "Create your first page"}
+                  actionLabel={treeLoading ? undefined : hasPages ? "New page" : "Create your first page"}
                   onAction={treeLoading ? undefined : () => void newPage(null)}
                 />
               )}
@@ -814,6 +920,13 @@ export default function WorkspaceShell() {
           actions={paletteActions}
           onSelect={select}
           onClose={() => setPalette(false)}
+        />
+
+        <DeleteOverlay
+          open={deleteOverlay !== null}
+          phase={deletePhase}
+          title={deleteOverlay?.title ?? "Deleting"}
+          subtitle={deleteOverlay?.subtitle}
         />
       </div>
     </div>
