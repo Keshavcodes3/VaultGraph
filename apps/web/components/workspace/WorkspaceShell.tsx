@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PaletteRoot, type PaletteAction } from "./CommandPalette";
 import DeleteOverlay, { type DeletePhase } from "./DeleteOverlay";
+import WorkspaceSwitchOverlay from "./WorkspaceSwitchOverlay";
 import { EmptyPage, TrashView } from "./EmptyPage";
 import PageView from "./PageView";
 import PageProperties from "./PageProperties";
@@ -29,7 +30,7 @@ import { useCreateProject } from "@/hooks/project/use-create-project";
 import { useUpdateProject } from "@/hooks/project/use-update-project";
 import { useDeleteProject } from "@/hooks/project/use-delete-project";
 import { useCreateWorkspace, useWorkspaces } from "@/hooks/workspace/use-workspaces";
-import { blockKeys, pageKeys } from "@/lib/query/query-keys";
+import { blockKeys, pageKeys, projectKeys } from "@/lib/query/query-keys";
 import {
   apiPageToEditor,
   apiPageToTrashItem,
@@ -84,6 +85,21 @@ function store(key: string, value: string): void {
   }
 }
 
+const LS_THEME = "vg-theme";
+
+function initialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  try {
+    const stored = window.localStorage.getItem(LS_THEME);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    /* fall through to system preference */
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
 function storeList(key: string, value: string[]): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
@@ -108,6 +124,10 @@ function errorMessage(error: unknown): string {
 const MIN_DELETE_MS = 1000;
 /** Beat showing the success tick before the overlay lifts. */
 const DONE_PAUSE_MS = 550;
+/** Minimum time the workspace-switch takeover stays up (intentional beat). */
+const MIN_SWITCH_MS = 900;
+/** Safety: never trap the user behind the switch overlay. */
+const MAX_SWITCH_MS = 6000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -118,7 +138,7 @@ export default function WorkspaceShell() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [propsOpen, setPropsOpen] = useState(false);
@@ -135,6 +155,7 @@ export default function WorkspaceShell() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [workspaceDraft, setWorkspaceDraft] = useState("");
+  const [switching, setSwitching] = useState<{ id: string; name: string; startedAt: number } | null>(null);
   const hydratedWorkspace = useRef(false);
 
   /* ----- delete overlay (masks latency with a ~1s Razorpay-style beat) ----- */
@@ -180,6 +201,15 @@ export default function WorkspaceShell() {
 
   const { data: user, isLoading: userLoading } = useCurrentUser();
 
+  // Persist theme choice; native controls follow via color-scheme.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LS_THEME, theme);
+    } catch {
+      /* storage unavailable — theme simply won't persist */
+    }
+  }, [theme]);
+
   useEffect(() => {
     if (!userLoading && !user) router.replace("/login");
   }, [userLoading, user, router]);
@@ -211,6 +241,14 @@ export default function WorkspaceShell() {
   }, [workspaces]);
 
   const switchWorkspace = useCallback((id: string) => {
+    if (id === workspaceId) {
+      setMobileNav(false);
+      return;
+    }
+    const name =
+      (workspaces ?? []).find((w) => w.id === id)?.name?.trim() || "Workspace";
+    // Cute takeover while the new workspace's data lands (see effect below).
+    setSwitching({ id, name, startedAt: Date.now() });
     setWorkspaceId(id);
     store(LS_WORKSPACE, id);
     setActiveId(readStored(activeKey(id)));
@@ -219,7 +257,12 @@ export default function WorkspaceShell() {
     setTrashOpen(false);
     setMobileNav(false);
     setActionError(null);
-  }, []);
+    // Fetch everything fresh for the new workspace — pages, blocks,
+    // projects, trash — so nothing stale flashes through.
+    queryClient.invalidateQueries({ queryKey: pageKeys.all });
+    queryClient.invalidateQueries({ queryKey: blockKeys.all });
+    queryClient.invalidateQueries({ queryKey: projectKeys.byWorkspace(id) });
+  }, [workspaceId, workspaces, queryClient]);
 
   const createWorkspace = useCreateWorkspace();
   const handleCreateWorkspace = useCallback(
@@ -240,7 +283,7 @@ export default function WorkspaceShell() {
 
   /* ----- projects (real) ----- */
 
-  const { data: projects, isLoading: projectsLoading } = useWorkspaceProjects(workspaceId);
+  const { data: projects, isLoading: projectsLoading, isFetching: projectsFetching } = useWorkspaceProjects(workspaceId);
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
@@ -321,6 +364,7 @@ export default function WorkspaceShell() {
   const {
     data: treeData,
     isLoading: treeLoading,
+    isFetching: treeFetching,
     isError: treeError,
     refetch: refetchTree,
   } = usePageTree(treeScope, Boolean(workspaceId));
@@ -383,6 +427,25 @@ export default function WorkspaceShell() {
     const first = flat[0];
     if (first) select(first.id);
   }, [trashOpen, activeId, treeLoading, treeData, flat, select]);
+
+  // Lift the workspace-switch takeover once the new workspace's data
+  // has landed (and the minimum cute beat has played). While a fetch
+  // is in flight the timer stays disarmed — it re-arms when quiet.
+  useEffect(() => {
+    if (!switching) return;
+    if (treeFetching || projectsFetching) return;
+    const elapsed = Date.now() - switching.startedAt;
+    const wait = Math.max(0, MIN_SWITCH_MS - elapsed);
+    const t = window.setTimeout(() => setSwitching(null), wait);
+    return () => window.clearTimeout(t);
+  }, [switching, treeFetching, projectsFetching]);
+
+  // Safety: never trap the user behind the takeover.
+  useEffect(() => {
+    if (!switching) return;
+    const t = window.setTimeout(() => setSwitching(null), MAX_SWITCH_MS);
+    return () => window.clearTimeout(t);
+  }, [switching]);
 
   /* ----- page ops (all hit the API, then invalidate) ----- */
 
@@ -787,7 +850,7 @@ export default function WorkspaceShell() {
   const hasPages = flat.length > 0;
 
   return (
-    <div className={theme === "dark" ? "dark" : ""}>
+    <div className={theme === "dark" ? "dark" : ""} style={{ colorScheme: theme }}>
       <div className="flex h-screen w-screen overflow-hidden bg-white font-sans text-ink antialiased dark:bg-[#111111] dark:text-[#F5F5F5]">
         {collapsed ? (
           <button
@@ -927,6 +990,11 @@ export default function WorkspaceShell() {
           phase={deletePhase}
           title={deleteOverlay?.title ?? "Deleting"}
           subtitle={deleteOverlay?.subtitle}
+        />
+
+        <WorkspaceSwitchOverlay
+          open={switching !== null}
+          workspaceName={switching?.name ?? "Workspace"}
         />
       </div>
     </div>
