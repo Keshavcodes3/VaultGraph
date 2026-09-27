@@ -18,7 +18,11 @@ export class ApiError extends Error {
 }
 
 function getApiBaseUrl(): string {
-  return process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:4000";
+  const raw =
+    process.env["NEXT_PUBLIC_API_URL"] ??
+    "https://vaultgraph-api.onrender.com";
+  // Strip trailing slash so `${base}${path}` never becomes `...//api/...`.
+  return raw.replace(/\/+$/, "");
 }
 
 type Envelope<T> = {
