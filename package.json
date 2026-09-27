@@ -1,6 +1,7 @@
 {
   "name": "vaultgraph",
   "private": true,
+  "packageManager": "bun@1.4.2",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
