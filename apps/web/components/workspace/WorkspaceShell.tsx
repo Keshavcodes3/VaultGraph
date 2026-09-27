@@ -15,12 +15,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PaletteRoot, type PaletteAction } from "./CommandPalette";
 import DeleteOverlay, { type DeletePhase } from "./DeleteOverlay";
+import PageCreateOverlay from "./PageCreateOverlay";
+import WorkspaceSwitchOverlay from "./WorkspaceSwitchOverlay";
 import { EmptyPage, TrashView } from "./EmptyPage";
 import PageView from "./PageView";
 import PageProperties from "./PageProperties";
 import WorkspaceSidebar from "./WorkspaceSidebar";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, api } from "@/lib/api/client";
 import { pagesApi } from "@/lib/api/pages";
+import type { Project } from "@/hooks/project/types";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
 import { usePage } from "@/hooks/pages/use-page";
 import { usePageTree, usePages } from "@/hooks/pages/use-pages";
@@ -28,8 +31,8 @@ import { useWorkspaceProjects } from "@/hooks/project/use-workspace-projects";
 import { useCreateProject } from "@/hooks/project/use-create-project";
 import { useUpdateProject } from "@/hooks/project/use-update-project";
 import { useDeleteProject } from "@/hooks/project/use-delete-project";
-import { useCreateWorkspace, useWorkspaces } from "@/hooks/workspace/use-workspaces";
-import { blockKeys, pageKeys } from "@/lib/query/query-keys";
+import { useCreateWorkspace, useDeleteWorkspace, useWorkspaces } from "@/hooks/workspace/use-workspaces";
+import { blockKeys, pageKeys, projectKeys, workspaceKeys } from "@/lib/query/query-keys";
 import {
   apiPageToEditor,
   apiPageToTrashItem,
@@ -84,6 +87,21 @@ function store(key: string, value: string): void {
   }
 }
 
+const LS_THEME = "vg-theme";
+
+function initialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  try {
+    const stored = window.localStorage.getItem(LS_THEME);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    /* fall through to system preference */
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
 function storeList(key: string, value: string[]): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
@@ -108,6 +126,12 @@ function errorMessage(error: unknown): string {
 const MIN_DELETE_MS = 1000;
 /** Beat showing the success tick before the overlay lifts. */
 const DONE_PAUSE_MS = 550;
+/** Minimum time the page-create takeover stays up (intentional beat). */
+const MIN_CREATE_MS = 900;
+/** Minimum time the workspace-switch takeover stays up (intentional beat). */
+const MIN_SWITCH_MS = 900;
+/** Safety: never trap the user behind the switch overlay. */
+const MAX_SWITCH_MS = 6000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -118,7 +142,7 @@ export default function WorkspaceShell() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [propsOpen, setPropsOpen] = useState(false);
@@ -129,12 +153,15 @@ export default function WorkspaceShell() {
   const [deletePhase, setDeletePhase] = useState<DeletePhase>("deleting");
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [emptyingTrash, setEmptyingTrash] = useState(false);
+  const [creatingPage, setCreatingPage] = useState(false);
+  const creatingPageRef = useRef(false);
 
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [workspaceDraft, setWorkspaceDraft] = useState("");
+  const [switching, setSwitching] = useState<{ id: string; name: string; startedAt: number } | null>(null);
   const hydratedWorkspace = useRef(false);
 
   /* ----- delete overlay (masks latency with a ~1s Razorpay-style beat) ----- */
@@ -163,6 +190,15 @@ export default function WorkspaceShell() {
       const started = Date.now();
       try {
         await work();
+        // Fetch everything fresh BEFORE the animation ends, so the
+        // overlay always lifts onto up-to-date data — never a stale flash.
+        // allSettled: a single failing refetch must not break the flow.
+        await Promise.allSettled([
+          queryClient.refetchQueries({ queryKey: pageKeys.all }),
+          queryClient.refetchQueries({ queryKey: blockKeys.all }),
+          queryClient.refetchQueries({ queryKey: projectKeys.all }),
+          queryClient.refetchQueries({ queryKey: workspaceKeys.all }),
+        ]);
         const elapsed = Date.now() - started;
         if (elapsed < MIN_DELETE_MS) await sleep(MIN_DELETE_MS - elapsed);
         setDeletePhase("done");
@@ -173,12 +209,21 @@ export default function WorkspaceShell() {
         setDeleteOverlay(null);
       }
     },
-    [markDeleting],
+    [markDeleting, queryClient],
   );
 
   /* ----- session ----- */
 
   const { data: user, isLoading: userLoading } = useCurrentUser();
+
+  // Persist theme choice; native controls follow via color-scheme.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LS_THEME, theme);
+    } catch {
+      /* storage unavailable — theme simply won't persist */
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (!userLoading && !user) router.replace("/login");
@@ -210,23 +255,80 @@ export default function WorkspaceShell() {
     }
   }, [workspaces]);
 
-  const switchWorkspace = useCallback((id: string) => {
+  const switchWorkspace = useCallback(async (id: string) => {
+    if (id === workspaceId) {
+      setMobileNav(false);
+      return;
+    }
+    const name =
+      (workspaces ?? []).find((w) => w.id === id)?.name?.trim() || "Workspace";
+    const storedActive = readStored(activeKey(id));
+    // Cute takeover while the new workspace's data lands (lifted below,
+    // only after the fresh data is in — never on a timer alone).
+    setSwitching({ id, name, startedAt: Date.now() });
     setWorkspaceId(id);
     store(LS_WORKSPACE, id);
-    setActiveId(readStored(activeKey(id)));
+    setActiveId(storedActive);
     setRecentIds(readStoredList(recentKey(id)));
     setActiveProjectId(null);
     setTrashOpen(false);
     setMobileNav(false);
     setActionError(null);
-  }, []);
+    // Fetch ALL of the new workspace's data before the animation ends —
+    // page tree, projects, trash + the stored active page — so the
+    // takeover lifts onto fresh content, never stale flashes.
+    // fetchQuery (not refetchQueries) so cold workspaces fetch too.
+    const started = Date.now();
+    try {
+      await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: pageKeys.tree({ workspaceId: id }),
+          queryFn: () => pagesApi.tree({ workspaceId: id }),
+          staleTime: 0,
+        }),
+        queryClient.fetchQuery({
+          queryKey: projectKeys.byWorkspace(id),
+          queryFn: async () => {
+            const { projects } = await api.get<{ projects: Project[] }>(
+              `/api/projects?workspaceId=${encodeURIComponent(id)}`
+            );
+            return projects;
+          },
+          staleTime: 0,
+        }),
+        queryClient.fetchQuery({
+          queryKey: pageKeys.list({
+            workspaceId: id,
+            projectId: undefined,
+            parentId: undefined,
+            archived: "true",
+            favorites: undefined,
+          }),
+          queryFn: () => pagesApi.list({ workspaceId: id, archived: true }),
+          staleTime: 0,
+        }),
+        storedActive
+          ? queryClient.fetchQuery({
+              queryKey: pageKeys.detail(storedActive),
+              queryFn: () => pagesApi.get(storedActive),
+              staleTime: 0,
+            })
+          : Promise.resolve(null),
+      ]);
+    } catch {
+      /* offline / error — overlay still lifts onto cached states below */
+    }
+    const elapsed = Date.now() - started;
+    if (elapsed < MIN_SWITCH_MS) await sleep(MIN_SWITCH_MS - elapsed);
+    setSwitching((cur) => (cur?.id === id ? null : cur));
+  }, [workspaceId, workspaces, queryClient]);
 
   const createWorkspace = useCreateWorkspace();
   const handleCreateWorkspace = useCallback(
     async (name: string) => {
       const run = async () => {
         const ws = await createWorkspace.mutateAsync({ name });
-        switchWorkspace(ws.id);
+        void switchWorkspace(ws.id);
       };
       try {
         setActionError(null);
@@ -236,6 +338,52 @@ export default function WorkspaceShell() {
       }
     },
     [createWorkspace, switchWorkspace]
+  );
+
+  const deleteWorkspace = useDeleteWorkspace();
+  const handleDeleteWorkspace = useCallback(
+    async (id: string) => {
+      const name =
+        (workspaces ?? []).find((w) => w.id === id)?.name?.trim() || "Workspace";
+      try {
+        await runWithDeleteAnimation(
+          {
+            ids: [id],
+            title: "Deleting workspace",
+            subtitle: `“${name}” and everything in it is being removed…`,
+          },
+          async () => {
+            await deleteWorkspace.mutateAsync(id);
+            try {
+              window.localStorage.removeItem(recentKey(id));
+              window.localStorage.removeItem(activeKey(id));
+            } catch {
+              /* storage unavailable */
+            }
+            queryClient.invalidateQueries({ queryKey: pageKeys.all });
+            queryClient.invalidateQueries({ queryKey: blockKeys.all });
+            queryClient.invalidateQueries({ queryKey: projectKeys.all });
+            queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
+            if (id === workspaceId) {
+              const fallback =
+                (workspaces ?? []).filter((w) => w.id !== id)[0]?.id ?? null;
+              if (fallback) {
+                void switchWorkspace(fallback);
+              } else {
+                setWorkspaceId(null);
+                setActiveId(null);
+                setRecentIds([]);
+                setActiveProjectId(null);
+                setTrashOpen(false);
+              }
+            }
+          },
+        );
+      } catch (error) {
+        setActionError({ message: errorMessage(error), retry: () => void handleDeleteWorkspace(id) });
+      }
+    },
+    [workspaces, workspaceId, deleteWorkspace, runWithDeleteAnimation, queryClient, switchWorkspace]
   );
 
   /* ----- projects (real) ----- */
@@ -384,6 +532,16 @@ export default function WorkspaceShell() {
     if (first) select(first.id);
   }, [trashOpen, activeId, treeLoading, treeData, flat, select]);
 
+  // Lift the workspace-switch takeover: switchWorkspace itself awaits
+  // ALL fresh data (tree, projects, trash, active page) before clearing,
+  // so this effect is only a safety net — never trap the user behind
+  // the takeover.
+  useEffect(() => {
+    if (!switching) return;
+    const t = window.setTimeout(() => setSwitching(null), MAX_SWITCH_MS);
+    return () => window.clearTimeout(t);
+  }, [switching]);
+
   /* ----- page ops (all hit the API, then invalidate) ----- */
 
   const refreshPages = useCallback(() => {
@@ -393,25 +551,43 @@ export default function WorkspaceShell() {
 
   const newPage = useCallback(
     async (parentId: string | null = null) => {
-      if (!workspaceId) return;
-      const run = async () => {
+      if (!workspaceId || creatingPageRef.current) return;
+      creatingPageRef.current = true;
+      setCreatingPage(true);
+      const started = Date.now();
+      try {
+        setActionError(null);
         const { page } = await pagesApi.create({
           workspaceId,
           projectId: activeProjectId,
           parentId,
           title: "Untitled",
         });
+        // Warm the detail cache + play the cute beat in parallel, then
+        // land straight inside the fresh page — no skeleton flash.
+        await Promise.all([
+          queryClient
+            .fetchQuery({
+              queryKey: pageKeys.detail(page.id),
+              queryFn: () => pagesApi.get(page.id),
+              staleTime: 0,
+            })
+            .catch(() => null),
+          (async () => {
+            const elapsed = Date.now() - started;
+            if (elapsed < MIN_CREATE_MS) await sleep(MIN_CREATE_MS - elapsed);
+          })(),
+        ]);
         refreshPages();
         select(page.id);
-      };
-      try {
-        setActionError(null);
-        await run();
       } catch (error) {
         setActionError({ message: errorMessage(error), retry: () => void newPage(parentId) });
+      } finally {
+        creatingPageRef.current = false;
+        setCreatingPage(false);
       }
     },
-    [workspaceId, activeProjectId, refreshPages, select]
+    [workspaceId, activeProjectId, refreshPages, select, queryClient]
   );
 
   const rename = useCallback(
@@ -787,7 +963,7 @@ export default function WorkspaceShell() {
   const hasPages = flat.length > 0;
 
   return (
-    <div className={theme === "dark" ? "dark" : ""}>
+    <div className={theme === "dark" ? "dark" : ""} style={{ colorScheme: theme }}>
       <div className="flex h-screen w-screen overflow-hidden bg-white font-sans text-ink antialiased dark:bg-[#111111] dark:text-[#F5F5F5]">
         {collapsed ? (
           <button
@@ -820,6 +996,7 @@ export default function WorkspaceShell() {
           deletingIds={deletingIds}
           onSwitchWorkspace={switchWorkspace}
           onCreateWorkspace={(name) => void handleCreateWorkspace(name)}
+          onDeleteWorkspace={(id) => void handleDeleteWorkspace(id)}
           onSelect={select}
           onNewPage={(parentId) => void newPage(parentId ?? null)}
           onToggleFav={(id) => void toggleFav(id)}
@@ -928,6 +1105,13 @@ export default function WorkspaceShell() {
           title={deleteOverlay?.title ?? "Deleting"}
           subtitle={deleteOverlay?.subtitle}
         />
+
+        <WorkspaceSwitchOverlay
+          open={switching !== null}
+          workspaceName={switching?.name ?? "Workspace"}
+        />
+
+        <PageCreateOverlay open={creatingPage} />
       </div>
     </div>
   );

@@ -1,33 +1,55 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Plus, Settings } from "lucide-react";
+import { Check, Plus, Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { SidebarWorkspace } from "./WorkspaceSidebar";
 import { useCalm } from "../landing/Reveal";
 
-/** Workspace switcher dropdown — your workspaces, create, settings. */
+/** Workspace switcher dropdown — your workspaces, create, delete, settings. */
 export default function WorkspaceSwitcher({
   open,
   currentId,
   workspaces,
   loading,
+  deletingIds,
   onSelect,
   onCreate,
+  onDelete,
   onClose,
 }: {
   open: boolean;
   currentId: string | null;
   workspaces: SidebarWorkspace[];
   loading: boolean;
+  deletingIds?: Set<string>;
   onSelect: (id: string) => void;
   onCreate: (name: string) => void;
+  onDelete: (id: string) => void;
   onClose: () => void;
 }) {
   const calm = useCalm();
   const ref = useRef<HTMLDivElement>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState("");
+  // Two-step delete confirm: first click arms, second click fires.
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const confirmTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(confirmTimer.current), []);
+
+  const armDelete = (id: string) => {
+    window.clearTimeout(confirmTimer.current);
+    setConfirmId(id);
+    confirmTimer.current = window.setTimeout(() => setConfirmId(null), 3000);
+  };
+
+  const fireDelete = (id: string) => {
+    window.clearTimeout(confirmTimer.current);
+    setConfirmId(null);
+    onDelete(id);
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -49,6 +71,7 @@ export default function WorkspaceSwitcher({
     if (!open) {
       setCreating(false);
       setDraft("");
+      setConfirmId(null);
     }
   }, [open ]);
 
@@ -91,17 +114,22 @@ export default function WorkspaceSwitcher({
               workspaces.map((w) => {
                 const active = w.id === currentId;
                 const initial = (w.name.trim().charAt(0) || "V").toUpperCase();
+                const deleting = deletingIds?.has(w.id) ?? false;
+                const confirming = confirmId === w.id;
                 return (
-                  <button
+                  <div
                     key={w.id}
-                    role="menuitemradio"
-                    aria-checked={active}
-                    onClick={() => {
-                      onSelect(w.id);
-                      onClose();
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-soft dark:hover:bg-white/10"
+                    className={`group flex w-full items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-soft dark:hover:bg-white/10 ${deleting ? "pointer-events-none opacity-50" : ""}`}
                   >
+                    <button
+                      role="menuitemradio"
+                      aria-checked={active}
+                      onClick={() => {
+                        onSelect(w.id);
+                        onClose();
+                      }}
+                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-1 py-1 text-left"
+                    >
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ink text-[12px] font-bold text-white dark:bg-white dark:text-ink">
                       {initial}
                     </span>
@@ -112,6 +140,37 @@ export default function WorkspaceSwitcher({
                     </span>
                     {active ? <Check size={14} className="shrink-0 text-ink dark:text-white" /> : null}
                   </button>
+                    {deleting ? (
+                      <span
+                        role="status"
+                        aria-label={`Deleting ${w.name}`}
+                        className="block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-[2px] border-rosy/30 border-t-rosy"
+                      />
+                    ) : confirming ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fireDelete(w.id);
+                        }}
+                        aria-label={`Confirm delete ${w.name}`}
+                        className="shrink-0 rounded-md bg-rosy/10 px-2 py-1 text-[12px] font-semibold text-rosy transition-colors hover:bg-rosy hover:text-white"
+                      >
+                        Sure?
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          armDelete(w.id);
+                        }}
+                        aria-label={`Delete ${w.name}`}
+                        title={`Delete ${w.name}`}
+                        className="shrink-0 rounded p-1 text-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-rosy focus-visible:opacity-100 max-md:opacity-100"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
                 );
               })
             )}

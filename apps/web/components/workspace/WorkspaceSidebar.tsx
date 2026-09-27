@@ -56,6 +56,7 @@ interface SidebarProps {
   deletingIds?: Set<string>;
   onSwitchWorkspace: (id: string) => void;
   onCreateWorkspace: (name: string) => void;
+  onDeleteWorkspace: (id: string) => void;
   onSelect: (id: string) => void;
   onNewPage: (parentId?: string | null) => void;
   onToggleFav: (id: string) => void;
@@ -233,8 +234,10 @@ export default function WorkspaceSidebar(p: SidebarProps) {
           currentId={p.workspaceId}
           workspaces={p.workspaces}
           loading={p.workspacesLoading}
+          deletingIds={p.deletingIds}
           onSelect={p.onSwitchWorkspace}
           onCreate={p.onCreateWorkspace}
+          onDelete={p.onDeleteWorkspace}
           onClose={() => setSwitcher(false)}
         />
       </div>

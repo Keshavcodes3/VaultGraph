@@ -168,6 +168,7 @@ interface BlockViewProps {
   onMove: (dir: "up" | "down") => void;
   onDuplicate: () => void;
   onType: (t: BlockType) => void;
+  onTypeWithContent: (t: BlockType, content: string, checked?: boolean) => void;
   onToggleSelect: () => void;
   onDragStart: (e: React.DragEvent) => void;
   dbRows: DbRow[];
@@ -205,8 +206,7 @@ function BlockView(p: BlockViewProps) {
     if (!v.startsWith("/") && block.type === "paragraph") {
       for (const rule of MD_RULES) {
         if (rule.re.test(v)) {
-          p.onType(rule.type);
-          p.onChange(v.replace(rule.re, ""), rule.checked);
+          p.onTypeWithContent(rule.type, v.replace(rule.re, ""), rule.checked);
           return;
         }
       }
@@ -224,7 +224,14 @@ function BlockView(p: BlockViewProps) {
   };
 
   const pick = (t: BlockType) => {
-    p.onType(t);
+    // Swallow the "/query" trigger text so only the chosen block remains.
+    // Single combined update: onType + onChange back-to-back would race
+    // (both compute from the same snapshot, last onPatch wins).
+    const trigger = `/${filter}`;
+    const rest = block.content.startsWith(trigger)
+      ? block.content.slice(trigger.length)
+      : block.content.replace(/^\//, "");
+    p.onTypeWithContent(t, rest);
     setMenu(false);
     setSlash(false);
   };
@@ -1045,6 +1052,19 @@ export default function BlockEditor({
 
   const retype = (id: string, t: BlockType) => {
     const src = blocks.find((x) => x.id === id);
+    retypeWithContent(id, t, src?.content ?? "");
+  };
+
+  // Type + content in ONE patch (slash pick, markdown shortcuts).
+  // Separate onType/onChange calls race: both map the same snapshot
+  // and the last onPatch silently drops the other half.
+  const retypeWithContent = (
+    id: string,
+    t: BlockType,
+    content: string,
+    checked?: boolean
+  ) => {
+    const src = blocks.find((x) => x.id === id);
     const patch: Partial<Block> =
       t === "table" && !src?.tableCells
         ? { type: t, tableCells: [["", "", ""], ["", "", ""]] }
@@ -1053,7 +1073,13 @@ export default function BlockEditor({
           : t === "database" && !src?.content
             ? { type: t, content: "Projects" }
             : { type: t };
-    apply(blocks.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    apply(
+      blocks.map((x) =>
+        x.id === id
+          ? { ...x, ...patch, content, checked: checked ?? x.checked }
+          : x
+      )
+    );
   };
 
   const toggleSelect = (id: string) =>
@@ -1176,6 +1202,9 @@ export default function BlockEditor({
             onMove={(d) => move(blk.id, d)}
             onDuplicate={() => dup(blk.id)}
             onType={(t) => retype(blk.id, t)}
+            onTypeWithContent={(t, c, checked) =>
+              retypeWithContent(blk.id, t, c, checked)
+            }
             onToggleSelect={() => toggleSelect(blk.id)}
             onDragStart={(e) => onBlockDragStart(e, blk.id)}
             dbRows={dbRows}
